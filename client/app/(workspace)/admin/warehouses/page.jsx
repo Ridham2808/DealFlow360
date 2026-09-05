@@ -3,18 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../../lib/api';
 import { useAuth } from '../../../../context/AuthContext';
-import { Button, Input, Badge, Modal, Spinner, EmptyState } from '../../../../components/ui';
 import { 
   Warehouse, 
   Plus, 
   MapPin, 
   Truck, 
-  PackageCheck, 
   AlertTriangle, 
   CheckCircle2, 
   AlertCircle,
   Boxes,
-  Edit2
+  X
 } from 'lucide-react';
 
 export default function AdminWarehousesPage() {
@@ -139,54 +137,54 @@ export default function AdminWarehousesPage() {
   const selectedWarehouse = warehouses.find((w) => w.id === selectedWarehouseId);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Warehouse className="w-5 h-5 text-blue-600" />
+          <h1 className="text-2xl font-bold tracking-tight text-[#ededed] flex items-center gap-2.5">
+            <Warehouse className="w-5 h-5 text-[#3b82f6]" />
             Warehouses & Stock Allocation
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Track multi-location fulfillment facilities, inventory reservation buffers, and replenishment thresholds.
+          <p className="text-xs text-[#71717a] mt-1">
+            Track multi-location fulfillment facilities, inventory reservation buffers, and replenishment thresholds
           </p>
         </div>
 
         {isAdmin && (
-          <Button 
+          <button 
             onClick={() => { setErrorMsg(null); setIsWarehouseModalOpen(true); }}
-            className="flex items-center gap-1.5 shadow-sm text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+            className="h-8 px-3.5 rounded-lg text-xs font-semibold bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center gap-1.5 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
           >
-            <Plus className="w-4 h-4" />
-            New Warehouse
-          </Button>
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Warehouse</span>
+          </button>
         )}
       </div>
 
       {/* Notifications */}
       {errorMsg && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-center gap-2 text-rose-700 text-xs">
+        <div className="p-3 bg-[#180e10] border border-[#3b191c] rounded-xl flex items-center gap-2 text-[#f87171] text-xs">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2 text-emerald-700 text-xs">
+        <div className="p-3 bg-[#0d1612] border border-[#16382a] rounded-xl flex items-center gap-2 text-[#34d399] text-xs">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {loading ? (
-        <div className="py-16 flex items-center justify-center">
-          <Spinner size="lg" />
+        <div className="py-20 flex items-center justify-center">
+          <span className="text-xs text-[#555] font-mono">Loading fulfillment centers...</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Warehouse Selection List */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          <div className="space-y-2.5">
+            <h3 className="text-[10px] font-mono uppercase tracking-wider text-[#71717a] px-1">
               Fulfillment Facilities ({warehouses.length})
             </h3>
             {warehouses.map((wh) => {
@@ -196,32 +194,34 @@ export default function AdminWarehousesPage() {
                 <div
                   key={wh.id}
                   onClick={() => setSelectedWarehouseId(wh.id)}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-blue-50/50 border-blue-500 ring-2 ring-blue-500/20 shadow-xs'
-                      : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+                      ? 'bg-[#121319] border-[#3b82f6] shadow-[0_1px_4px_rgba(0,0,0,0.4)]'
+                      : 'bg-[#0b0c0e] border-[#1c1c22] hover:border-[#2a2a34]'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-bold text-sm text-slate-900">{wh.name}</h4>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                      <h4 className="font-bold text-sm text-[#ededed]">{wh.name}</h4>
+                      <div className="flex items-center gap-1.5 text-xs text-[#71717a] mt-1">
+                        <MapPin className="w-3.5 h-3.5 text-[#555]" />
                         <span>{wh.location}</span>
                       </div>
                     </div>
-                    <Badge variant={wh.isActive ? 'success' : 'neutral'} size="sm">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase ${
+                      wh.isActive ? 'bg-[#0f1914] text-[#34d399] border border-[#16382a]' : 'bg-[#18181b] text-[#71717a]'
+                    }`}>
                       {wh.isActive ? 'ACTIVE' : 'INACTIVE'}
-                    </Badge>
+                    </span>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <div className="mt-3 pt-3 border-t border-[#18181f] flex items-center justify-between text-[11px] text-[#71717a]">
                     <span className="flex items-center gap-1">
-                      <Truck className="w-3 h-3 text-slate-400" />
-                      Shipping Weight: <strong className="text-slate-700 font-mono">{wh.shippingCostWeight}x</strong>
+                      <Truck className="w-3.5 h-3.5 text-[#555]" />
+                      Weight: <strong className="text-[#ededed] font-mono">{wh.shippingCostWeight}x</strong>
                     </span>
-                    <span className="text-blue-600 font-semibold">
-                      {wh._count?.stockLevels || 0} Stock Records
+                    <span className="text-[#3b82f6] font-mono text-[10px]">
+                      {wh._count?.stockLevels || 0} Stock Lines
                     </span>
                   </div>
                 </div>
@@ -230,15 +230,15 @@ export default function AdminWarehousesPage() {
           </div>
 
           {/* Warehouse Stock Table */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between">
+          <div className="lg:col-span-2 bg-[#0b0c0e] rounded-2xl border border-[#1c1c22] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-[#1c1c22] bg-[#0f1014] flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Boxes className="w-4 h-4 text-blue-600" />
-                  Live Stock Allocation — {selectedWarehouse?.name || 'Selected Warehouse'}
+                <h3 className="text-sm font-semibold text-[#ededed] flex items-center gap-2">
+                  <Boxes className="w-4 h-4 text-[#3b82f6]" />
+                  Live Stock Allocation — {selectedWarehouse?.name || 'Facility'}
                 </h3>
-                <p className="text-[11px] text-slate-500">
-                  Location: {selectedWarehouse?.location} | Multiplier: {selectedWarehouse?.shippingCostWeight}x
+                <p className="text-[11px] text-[#71717a]">
+                  Location: {selectedWarehouse?.location} | Rate Multiplier: {selectedWarehouse?.shippingCostWeight}x
                 </p>
               </div>
             </div>
@@ -246,55 +246,52 @@ export default function AdminWarehousesPage() {
             <div className="overflow-x-auto flex-1">
               {stockLoading ? (
                 <div className="py-16 flex items-center justify-center">
-                  <Spinner size="md" />
+                  <span className="text-xs text-[#555] font-mono">Loading inventory...</span>
                 </div>
               ) : stock.length === 0 ? (
-                <div className="py-12">
-                  <EmptyState
-                    title="No stock records found"
-                    description="No inventory records linked to this facility yet."
-                  />
+                <div className="py-16 text-center text-xs text-[#555]">
+                  No inventory records linked to this facility.
                 </div>
               ) : (
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-100/70 text-slate-500 text-[10px] uppercase font-semibold border-b border-slate-200">
+                    <tr className="bg-[#0f1014] text-[#71717a] text-[10px] uppercase font-mono border-b border-[#1c1c22]">
                       <th className="py-2.5 px-4">Product / SKU</th>
                       <th className="py-2.5 px-3 text-right">On Hand</th>
                       <th className="py-2.5 px-3 text-right">Reserved</th>
                       <th className="py-2.5 px-3 text-right">Available</th>
-                      <th className="py-2.5 px-3 text-center">Alert Limit</th>
-                      <th className="py-2.5 px-3 text-center">Inventory Status</th>
+                      <th className="py-2.5 px-3 text-center">Threshold</th>
+                      <th className="py-2.5 px-3 text-center">Status</th>
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                  <tbody className="divide-y divide-[#16161b] text-[#a1a1aa]">
                     {stock.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                      <tr key={item.id} className="hover:bg-[#111216] transition-colors">
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-900">{item.productName}</div>
-                          <div className="font-mono text-[11px] text-blue-600">{item.sku}</div>
+                          <div className="font-semibold text-[#ededed]">{item.productName}</div>
+                          <div className="font-mono text-[11px] text-[#3b82f6]">{item.sku}</div>
                         </td>
-                        <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">
+                        <td className="py-3 px-3 text-right font-mono font-bold text-[#ededed]">
                           {item.quantityOnHand}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono text-amber-600 font-semibold">
+                        <td className="py-3 px-3 text-right font-mono text-[#fbbf24] font-semibold">
                           {item.reserved}
                         </td>
-                        <td className="py-3 px-3 text-right font-mono text-emerald-700 font-bold">
+                        <td className="py-3 px-3 text-right font-mono text-[#34d399] font-bold">
                           {item.available}
                         </td>
-                        <td className="py-3 px-3 text-center font-mono text-slate-500">
+                        <td className="py-3 px-3 text-center font-mono text-[#52525b]">
                           {item.replenishmentThreshold}
                         </td>
                         <td className="py-3 px-3 text-center">
                           {item.isLowStock ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#1d1214] text-[#f87171] border border-[#3b191c]">
                               <AlertTriangle className="w-3 h-3" />
                               REPLENISH
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#0f1914] text-[#34d399] border border-[#16382a]">
                               HEALTHY
                             </span>
                           )}
@@ -312,9 +309,9 @@ export default function AdminWarehousesPage() {
                                 setErrorMsg(null);
                                 setIsStockModalOpen(true);
                               }}
-                              className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                              className="text-xs font-semibold text-[#3b82f6] hover:text-[#60a5fa]"
                             >
-                              Adjust Stock
+                              Adjust
                             </button>
                           )}
                         </td>
@@ -329,128 +326,146 @@ export default function AdminWarehousesPage() {
       )}
 
       {/* Modal: New Warehouse */}
-      <Modal
-        isOpen={isWarehouseModalOpen}
-        onClose={() => setIsWarehouseModalOpen(false)}
-        title="Add Fulfillment Warehouse"
-      >
-        <form onSubmit={handleCreateWarehouse} className="space-y-3 text-xs">
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">Facility Name *</label>
-            <Input
-              required
-              value={warehouseForm.name}
-              onChange={(e) => setWarehouseForm({ ...warehouseForm, name: e.target.value })}
-              placeholder="e.g. South Logistics Depot"
-            />
-          </div>
+      {isWarehouseModalOpen && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-[#0e0f13] border border-[#222228] rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#1c1c22] pb-3">
+              <h3 className="text-sm font-bold text-[#ededed]">Add Fulfillment Warehouse</h3>
+              <button onClick={() => setIsWarehouseModalOpen(false)} className="text-[#555] hover:text-[#ededed]">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">Location (City, State / Region) *</label>
-            <Input
-              required
-              value={warehouseForm.location}
-              onChange={(e) => setWarehouseForm({ ...warehouseForm, location: e.target.value })}
-              placeholder="e.g. Atlanta, GA"
-            />
-          </div>
+            <form onSubmit={handleCreateWarehouse} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[#a1a1aa] mb-1">Facility Name *</label>
+                <input
+                  required
+                  value={warehouseForm.name}
+                  onChange={(e) => setWarehouseForm({ ...warehouseForm, name: e.target.value })}
+                  placeholder="e.g. South Logistics Depot"
+                  className="w-full px-3 py-2 bg-[#14151b] border border-[#25252d] rounded-lg text-[#ededed] text-xs focus:outline-none focus:border-[#444]"
+                />
+              </div>
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">Shipping Cost Weight Multiplier</label>
-            <Input
-              type="number"
-              step="0.05"
-              value={warehouseForm.shippingCostWeight}
-              onChange={(e) => setWarehouseForm({ ...warehouseForm, shippingCostWeight: e.target.value })}
-              placeholder="1.0"
-            />
-          </div>
+              <div>
+                <label className="block text-[#a1a1aa] mb-1">Location *</label>
+                <input
+                  required
+                  value={warehouseForm.location}
+                  onChange={(e) => setWarehouseForm({ ...warehouseForm, location: e.target.value })}
+                  placeholder="e.g. Atlanta, GA"
+                  className="w-full px-3 py-2 bg-[#14151b] border border-[#25252d] rounded-lg text-[#ededed] text-xs focus:outline-none focus:border-[#444]"
+                />
+              </div>
 
-          <div className="pt-3 flex justify-end gap-2 border-t border-slate-200">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsWarehouseModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              loading={submitting}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Create Warehouse
-            </Button>
+              <div>
+                <label className="block text-[#a1a1aa] mb-1">Shipping Cost Multiplier</label>
+                <input
+                  type="number"
+                  step="0.05"
+                  value={warehouseForm.shippingCostWeight}
+                  onChange={(e) => setWarehouseForm({ ...warehouseForm, shippingCostWeight: e.target.value })}
+                  placeholder="1.0"
+                  className="w-full px-3 py-2 bg-[#14151b] border border-[#25252d] rounded-lg text-[#ededed] text-xs font-mono focus:outline-none focus:border-[#444]"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2 border-t border-[#1c1c22]">
+                <button
+                  type="button"
+                  onClick={() => setIsWarehouseModalOpen(false)}
+                  className="h-8 px-3 rounded-lg text-xs font-medium text-[#71717a] hover:text-[#ededed] hover:bg-[#18181f]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="h-8 px-4 rounded-lg text-xs font-semibold bg-[#2563eb] hover:bg-[#1d4ed8] text-white disabled:opacity-50"
+                >
+                  {submitting ? 'Creating...' : 'Create Warehouse'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </Modal>
+        </div>
+      )}
 
       {/* Modal: Adjust Stock */}
-      <Modal
-        isOpen={isStockModalOpen}
-        onClose={() => setIsStockModalOpen(false)}
-        title={`Adjust Stock — ${activeStockItem?.productName || ''}`}
-      >
-        <form onSubmit={handleUpdateStock} className="space-y-3 text-xs">
-          <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1">
-            <div className="font-semibold text-slate-900">{activeStockItem?.productName}</div>
-            <div className="font-mono text-[11px] text-blue-600">SKU: {activeStockItem?.sku}</div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">Physical Quantity On Hand *</label>
-              <Input
-                required
-                type="number"
-                min="0"
-                value={stockForm.quantityOnHand}
-                onChange={(e) => setStockForm({ ...stockForm, quantityOnHand: e.target.value })}
-              />
+      {isStockModalOpen && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-[#0e0f13] border border-[#222228] rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#1c1c22] pb-3">
+              <h3 className="text-sm font-bold text-[#ededed]">
+                Adjust Stock — {activeStockItem?.productName}
+              </h3>
+              <button onClick={() => setIsStockModalOpen(false)} className="text-[#555] hover:text-[#ededed]">
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">Reserved Stock (Commitments)</label>
-              <Input
-                type="number"
-                min="0"
-                value={stockForm.reserved}
-                onChange={(e) => setStockForm({ ...stockForm, reserved: e.target.value })}
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">Replenishment Alert Threshold</label>
-            <Input
-              type="number"
-              min="0"
-              value={stockForm.replenishmentThreshold}
-              onChange={(e) => setStockForm({ ...stockForm, replenishmentThreshold: e.target.value })}
-            />
-          </div>
+            <form onSubmit={handleUpdateStock} className="space-y-3 text-xs">
+              <div className="p-2.5 bg-[#14151b] border border-[#1c1c22] rounded-xl text-xs space-y-0.5">
+                <div className="font-semibold text-[#ededed]">{activeStockItem?.productName}</div>
+                <div className="font-mono text-[11px] text-[#3b82f6]">SKU: {activeStockItem?.sku}</div>
+              </div>
 
-          <div className="pt-3 flex justify-end gap-2 border-t border-slate-200">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsStockModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              loading={submitting}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Save Stock Adjustments
-            </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#a1a1aa] mb-1">Quantity On Hand *</label>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    value={stockForm.quantityOnHand}
+                    onChange={(e) => setStockForm({ ...stockForm, quantityOnHand: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#14151b] border border-[#25252d] rounded-lg text-[#ededed] text-xs font-mono focus:outline-none focus:border-[#444]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#a1a1aa] mb-1">Reserved Commitments</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={stockForm.reserved}
+                    onChange={(e) => setStockForm({ ...stockForm, reserved: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#14151b] border border-[#25252d] rounded-lg text-[#ededed] text-xs font-mono focus:outline-none focus:border-[#444]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#a1a1aa] mb-1">Replenishment Alert Threshold</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={stockForm.replenishmentThreshold}
+                  onChange={(e) => setStockForm({ ...stockForm, replenishmentThreshold: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#14151b] border border-[#25252d] rounded-lg text-[#ededed] text-xs font-mono focus:outline-none focus:border-[#444]"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2 border-t border-[#1c1c22]">
+                <button
+                  type="button"
+                  onClick={() => setIsStockModalOpen(false)}
+                  className="h-8 px-3 rounded-lg text-xs font-medium text-[#71717a] hover:text-[#ededed] hover:bg-[#18181f]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="h-8 px-4 rounded-lg text-xs font-semibold bg-[#2563eb] hover:bg-[#1d4ed8] text-white disabled:opacity-50"
+                >
+                  {submitting ? 'Saving...' : 'Save Adjustments'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </Modal>
+        </div>
+      )}
     </div>
   );
 }
