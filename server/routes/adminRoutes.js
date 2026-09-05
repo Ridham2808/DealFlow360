@@ -4,6 +4,7 @@ const adminController = require('../controllers/adminController');
 const productController = require('../controllers/productController');
 const priceListController = require('../controllers/priceListController');
 const discountController = require('../controllers/discountController');
+const approvalRuleController = require('../controllers/approvalRuleController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
 
@@ -58,5 +59,9 @@ router.get('/discount-tiers',                      requireAdminOrManager, (req, 
 router.patch('/discount-tiers/:id',                 requireAdmin,          (req, res, next) => discountController.updateTier(req, res, next));
 router.get('/category-ceilings',                   requireAdminOrManager, (req, res, next) => discountController.listCeilings(req, res, next));
 router.patch('/category-ceilings/:id',              requireAdmin,          (req, res, next) => discountController.updateCeiling(req, res, next));
+
+// ── Approval Chain Rules ────────────────────────────────────────────────
+router.get('/approval-chain-rules',                requireAdminOrManager, (req, res, next) => approvalRuleController.listRules(req, res, next));
+router.patch('/approval-chain-rules/:id',           requireAdmin,          (req, res, next) => approvalRuleController.updateRule(req, res, next));
 
 module.exports = router;
