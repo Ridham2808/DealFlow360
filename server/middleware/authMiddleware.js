@@ -3,11 +3,11 @@ const { ApiError } = require('../utils/apiResponse');
 const userRepository = require('../repositories/userRepository');
 
 /**
- * Authentication Middleware:
+ * Authentication Middleware (requireAuth):
  * Verifies JWT token from HTTP-only cookie (or Bearer Authorization header fallback)
- * Fetches current user and attaches to req.user
+ * Attaches user to req.user
  */
-async function authMiddleware(req, res, next) {
+async function requireAuth(req, res, next) {
   try {
     let token = req.cookies?.[COOKIE_NAME];
 
@@ -16,12 +16,12 @@ async function authMiddleware(req, res, next) {
     }
 
     if (!token) {
-      throw new ApiError('Authentication required. Please sign in.', 401, 'UNAUTHORIZED');
+      throw new ApiError('Authentication required. Missing token.', 401, 'UNAUTHORIZED');
     }
 
     const decoded = verifyToken(token);
     if (!decoded || !decoded.userId) {
-      throw new ApiError('Session expired or invalid token. Please sign in again.', 401, 'TOKEN_INVALID');
+      throw new ApiError('Invalid or expired authentication token.', 401, 'TOKEN_INVALID');
     }
 
     const user = await userRepository.findById(decoded.userId);
@@ -29,13 +29,13 @@ async function authMiddleware(req, res, next) {
       throw new ApiError('User account not found or deactivated.', 401, 'USER_INACTIVE');
     }
 
-    // Attach validated user to request object
+    // Attach verified user identity
     req.user = {
       id: user.id,
+      name: user.name,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
       role: user.role,
+      customerTier: user.customerTier,
       customerId: user.customerId || null,
     };
 
@@ -45,4 +45,5 @@ async function authMiddleware(req, res, next) {
   }
 }
 
-module.exports = authMiddleware;
+module.exports = requireAuth;
+module.exports.requireAuth = requireAuth;

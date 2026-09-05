@@ -2,10 +2,12 @@ const { ApiError } = require('../utils/apiResponse');
 
 /**
  * Role-Based Access Control Middleware:
- * Verifies that the authenticated user possesses one of the authorized roles.
+ * Supports requireRole(['ADMIN', 'SALES_MANAGER']) or requireRoles('ADMIN', 'SALES_MANAGER')
  * Never trusts any client-supplied role or customer ID.
  */
-function requireRoles(...allowedRoles) {
+function requireRole(roles) {
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
   return (req, res, next) => {
     if (!req.user) {
       return next(new ApiError('Authentication required.', 401, 'UNAUTHORIZED'));
@@ -14,7 +16,7 @@ function requireRoles(...allowedRoles) {
     if (!allowedRoles.includes(req.user.role)) {
       return next(
         new ApiError(
-          `Access denied. Required role: [${allowedRoles.join(', ')}]. Current role: ${req.user.role}`,
+          `Access forbidden. Requires one of roles: [${allowedRoles.join(', ')}]. Current role: ${req.user.role}`,
           403,
           'FORBIDDEN'
         )
@@ -25,9 +27,10 @@ function requireRoles(...allowedRoles) {
   };
 }
 
-/**
- * Guard to ensure only internal employees (non-customers) have access.
- */
+function requireRoles(...allowedRoles) {
+  return requireRole(allowedRoles);
+}
+
 function requireInternalUser(req, res, next) {
   if (!req.user) {
     return next(new ApiError('Authentication required.', 401, 'UNAUTHORIZED'));
@@ -38,20 +41,18 @@ function requireInternalUser(req, res, next) {
   next();
 }
 
-/**
- * Guard to ensure customer portal access is limited to CUSTOMER role.
- */
 function requireCustomer(req, res, next) {
   if (!req.user) {
     return next(new ApiError('Authentication required.', 401, 'UNAUTHORIZED'));
   }
   if (req.user.role !== 'CUSTOMER') {
-    return next(new ApiError('Access restricted to verified customer accounts.', 403, 'CUSTOMER_ONLY'));
+    return next(new ApiError('Access restricted to customer accounts.', 403, 'CUSTOMER_ONLY'));
   }
   next();
 }
 
 module.exports = {
+  requireRole,
   requireRoles,
   requireInternalUser,
   requireCustomer,
