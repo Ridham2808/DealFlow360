@@ -18,8 +18,8 @@ import {
   ArrowUpDown,
   Calculator,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+import { api } from '../../../../lib/api';
+import { useAuth } from '../../../../context/AuthContext';
 
 export default function AdminWarehousesPage() {
   const { user } = useAuth();
@@ -239,9 +239,9 @@ export default function AdminWarehousesPage() {
           </div>
         )}
 
-        {/* ═══════════════ AMBER NOTIFICATION BANNER (MOCKUP-FAITHFUL) ═══════════════ */}
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-[#1c1508] border border-[#422e11] text-[#f59e0b] text-xs leading-relaxed">
-          <AlertTriangle className="w-4 h-4 shrink-0 text-[#f59e0b] mt-0.5" />
+        {/* ═══════════════ NOTIFICATION BANNER (CLEAN LINEAR DARK) ═══════════════ */}
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-[#111218] border border-[#21232e] text-[#9ca3af] text-xs leading-relaxed shadow-sm">
+          <Boxes className="w-4 h-4 shrink-0 text-[#60a5fa] mt-0.5" />
           <p>
             Multi-location inventory allocation calculates available fulfillment buffers as{' '}
             <strong className="text-white">Available = On Hand - Reserved</strong>. Stock level adjustments are
@@ -389,7 +389,7 @@ export default function AdminWarehousesPage() {
                             {item.quantityOnHand}
                           </td>
 
-                          <td className="py-3 px-3 text-right font-mono text-[#fbbf24] font-medium">
+                          <td className="py-3 px-3 text-right font-mono text-[#94a3b8] font-medium">
                             {item.reserved}
                           </td>
 
@@ -564,7 +564,7 @@ export default function AdminWarehousesPage() {
                   <span className="text-[#555] font-bold">&minus;</span>
                   <div className="text-center">
                     <div className="text-[#71717a] text-[10px]">Reserved</div>
-                    <div className="font-bold text-[#fbbf24] text-sm">{modalReserved}</div>
+                    <div className="font-bold text-[#cbd5e1] text-sm">{modalReserved}</div>
                   </div>
                   <span className="text-[#555] font-bold">=</span>
                   <div className="text-center">

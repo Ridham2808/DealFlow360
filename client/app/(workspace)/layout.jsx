@@ -40,11 +40,11 @@ export default function WorkspaceLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] text-[#c8c8c2] flex flex-col font-sans selection:bg-[#262626] selection:text-white">
-      {/* Top Navbar — No Sidebar Layout */}
+    <div className="h-screen bg-[#080808] text-[#c8c8c2] flex flex-col overflow-hidden font-sans selection:bg-[#262626] selection:text-white">
+      {/* Top Navbar — Pinned at top, does not scroll */}
       <TopNav />
 
-      {/* Main Screen Content */}
+      {/* Main Screen Content — Independently scrollable */}
       <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 overflow-y-auto">
         {children}
       </main>

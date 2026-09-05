@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { api } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+import { api } from '../../../../lib/api';
+import { useAuth } from '../../../../context/AuthContext';
 import { 
   Tags, 
   Plus, 
@@ -108,9 +108,9 @@ export default function AdminPriceListsPage() {
         )}
       </div>
 
-      {/* Amber Advisory Banner */}
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-[#1c1508] border border-[#422e11] text-[#f59e0b] text-xs leading-relaxed">
-        <AlertTriangle className="w-4 h-4 shrink-0 text-[#f59e0b] mt-0.5" />
+      {/* Clean Dark Helper Banner — No Glowing Yellow */}
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-[#111218] border border-[#21232e] text-[#9ca3af] text-xs leading-relaxed shadow-sm">
+        <Tags className="w-4 h-4 shrink-0 text-[#60a5fa] mt-0.5" />
         <p>
           Customer tier price lists dynamically override standard product catalog base prices. When a quotation line is generated, the pricing engine resolves tier-matched rates with priority over default catalog baselines.
         </p>
