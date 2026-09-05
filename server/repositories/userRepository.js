@@ -41,18 +41,29 @@ class UserRepository {
     });
   }
 
-  async findOrCreateCustomer(customerData) {
+  async findCustomerByEmail(email) {
+    return prisma.customer.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+  }
+
+  async findCustomerById(id) {
+    return prisma.customer.findUnique({
+      where: { id },
+    });
+  }
+
+  async findOrCreateCustomer({ name, email, tier = 'BRONZE' }) {
     let customer = await prisma.customer.findUnique({
-      where: { email: customerData.email.toLowerCase().trim() },
+      where: { email: email.toLowerCase().trim() },
     });
 
     if (!customer) {
       customer = await prisma.customer.create({
         data: {
-          name: customerData.name || customerData.companyName,
-          companyName: customerData.companyName,
-          email: customerData.email.toLowerCase().trim(),
-          phone: customerData.phone || null,
+          name,
+          email: email.toLowerCase().trim(),
+          tier,
         },
       });
     }

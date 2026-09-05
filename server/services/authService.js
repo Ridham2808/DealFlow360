@@ -7,62 +7,69 @@ class AuthService {
   /**
    * Register a new user
    */
-  async register({ email, password, firstName, lastName, role = 'SALES_REP', companyName, phone }) {
-    const existing = await userRepository.findByEmail(email);
+  async register({ name, email, password, role = 'SALES_REP', companyName, customerTier = 'BRONZE' }) {
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await userRepository.findByEmail(cleanEmail);
     if (existing) {
-      throw new ApiError('An account with this email address already exists.', 409, 'EMAIL_EXISTS', { email });
+      throw new ApiError('An account with this email address already exists.', 409, 'EMAIL_EXISTS', { email: cleanEmail });
     }
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
     let customerId = null;
-    if (role === 'CUSTOMER' && companyName) {
+    let assignedTier = null;
+
+    if (role === 'CUSTOMER') {
+      assignedTier = customerTier || 'BRONZE';
       const customer = await userRepository.findOrCreateCustomer({
-        companyName,
-        name: `${firstName} ${lastName}`,
-        email,
-        phone,
+        name: companyName || name,
+        email: cleanEmail,
+        tier: assignedTier,
       });
       customerId = customer.id;
     }
 
     const user = await userRepository.create({
-      email,
+      name,
+      email: cleanEmail,
       passwordHash,
-      firstName,
-      lastName,
       role,
-      phone: phone || null,
+      customerTier: assignedTier,
       customerId,
+      isActive: true,
     });
 
+    // Issue signed JWT containing only minimum identity claims
     const token = generateToken({
       userId: user.id,
-      email: user.email,
       role: user.role,
       customerId: user.customerId,
     });
 
-    const userSafe = {
+    const safeUser = {
       id: user.id,
+      name: user.name,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
       role: user.role,
+      customerTier: user.customerTier,
       customerId: user.customerId,
       customer: user.customer,
       createdAt: user.createdAt,
     };
 
-    return { user: userSafe, token };
+    return { user: safeUser, token };
   }
 
   /**
-   * Authenticate user with email and password
+   * Authenticate user with email and password.
+   * Security Rule: Invalid credentials must not reveal whether an email exists.
    */
   async login(email, password) {
-    const user = await userRepository.findByEmail(email);
+    const cleanEmail = (email || '').toLowerCase().trim();
+    const user = await userRepository.findByEmail(cleanEmail);
+
+    // Generic error message for both non-existent user and bad password
     if (!user) {
       throw new ApiError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
     }
@@ -76,41 +83,41 @@ class AuthService {
       throw new ApiError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
     }
 
+    // Minimum identity claims
     const token = generateToken({
       userId: user.id,
-      email: user.email,
       role: user.role,
       customerId: user.customerId,
     });
 
-    const userSafe = {
+    const safeUser = {
       id: user.id,
+      name: user.name,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
       role: user.role,
+      customerTier: user.customerTier,
       customerId: user.customerId,
       customer: user.customer,
     };
 
-    return { user: userSafe, token };
+    return { user: safeUser, token };
   }
 
   /**
-   * Get current user profile by ID
+   * Return profile for authenticated user
    */
   async getCurrentUser(userId) {
     const user = await userRepository.findById(userId);
-    if (!user) {
-      throw new ApiError('User not found.', 404, 'USER_NOT_FOUND');
+    if (!user || !user.isActive) {
+      throw new ApiError('User not found or deactivated.', 404, 'USER_NOT_FOUND');
     }
 
     return {
       id: user.id,
+      name: user.name,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
       role: user.role,
+      customerTier: user.customerTier,
       customerId: user.customerId,
       customer: user.customer,
     };
