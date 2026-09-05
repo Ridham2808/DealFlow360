@@ -39,12 +39,14 @@ app.use(cookieParser());
 
 const adminRoutes = require('./routes/adminRoutes');
 const approvalRoutes = require('./routes/approvalRoutes');
+const quotationRoutes = require('./routes/quotationRoutes');
 
 // Base API Routes
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', approvalRoutes);
+app.use('/api/quotations', quotationRoutes);
 
 // Placeholder index route
 app.get('/', (req, res) => {
