@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
     if (role === 'CUSTOMER') {
       return '/portal';
     }
-    return '/workspace/dashboard';
+    return '/dashboard';
   };
 
   // Login handler
@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
       if (loggedInUser?.role) {
         router.push(getRoleRedirectPath(loggedInUser.role));
       } else {
-        router.push('/workspace/dashboard');
+        router.push('/dashboard');
       }
       return { success: true, user: loggedInUser };
     } catch (err) {

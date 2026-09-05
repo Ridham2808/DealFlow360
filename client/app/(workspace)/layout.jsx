@@ -71,9 +71,9 @@ export default function WorkspaceLayout({ children }) {
           <nav className="space-y-1">
             <div className="text-[10px] uppercase font-semibold tracking-wider text-slate-500 px-3 py-1">Core Sales</div>
             <a
-              href="/workspace/dashboard"
+              href="/dashboard"
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                pathname === '/workspace/dashboard'
+                pathname === '/dashboard'
                   ? 'bg-blue-600 text-white'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
@@ -101,9 +101,9 @@ export default function WorkspaceLayout({ children }) {
               <>
                 <div className="pt-4 text-[10px] uppercase font-semibold tracking-wider text-slate-500 px-3 py-1">Configuration</div>
                 <a
-                  href="/workspace/admin/products"
+                  href="/admin/products"
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    isLinkActive('/workspace/admin/products')
+                    isLinkActive('/admin/products')
                       ? 'bg-blue-600 text-white font-semibold'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
@@ -112,9 +112,9 @@ export default function WorkspaceLayout({ children }) {
                   <span>Products & Catalog</span>
                 </a>
                 <a
-                  href="/workspace/admin/pricelists"
+                  href="/admin/pricelists"
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    isLinkActive('/workspace/admin/pricelists')
+                    isLinkActive('/admin/pricelists')
                       ? 'bg-blue-600 text-white font-semibold'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
@@ -123,9 +123,9 @@ export default function WorkspaceLayout({ children }) {
                   <span>Price Lists</span>
                 </a>
                 <a
-                  href="/workspace/admin/discounts"
+                  href="/admin/discounts"
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    isLinkActive('/workspace/admin/discounts')
+                    isLinkActive('/admin/discounts')
                       ? 'bg-blue-600 text-white font-semibold'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
@@ -134,9 +134,9 @@ export default function WorkspaceLayout({ children }) {
                   <span>Discounts & Approval Rules</span>
                 </a>
                 <a
-                  href="/workspace/admin/warehouses"
+                  href="/admin/warehouses"
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    isLinkActive('/workspace/admin/warehouses')
+                    isLinkActive('/admin/warehouses')
                       ? 'bg-blue-600 text-white font-semibold'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
