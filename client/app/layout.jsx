@@ -9,8 +9,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className="antialiased bg-slate-50 text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+    <html lang="en" className="dark">
+      <body className="antialiased bg-[#09090b] text-zinc-100 selection:bg-zinc-800 selection:text-white font-sans">
         <AuthProvider>
           <WorkspaceProvider>
             {children}
@@ -20,3 +20,4 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+
