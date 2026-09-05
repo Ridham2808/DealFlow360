@@ -25,15 +25,10 @@ export default function WorkspaceLayout({ children }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#080808]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#d4d4cf] flex items-center justify-center animate-pulse">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="9" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="1" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="9" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" opacity="0.35" />
-            </svg>
+          <div className="w-10 h-10 rounded-xl bg-[#ededeb] flex items-center justify-center p-1.5 animate-pulse shadow-sm overflow-hidden">
+            <img src="/logo.png" alt="DealFlow360 Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="text-xs text-[#555] font-mono">Loading DealFlow360...</span>
+          <span className="text-xs text-[#666] font-mono">Loading DealFlow360...</span>
         </div>
       </div>
     );

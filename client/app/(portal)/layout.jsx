@@ -35,8 +35,8 @@ export default function PortalLayout({ children }) {
       <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-xs">
-              DF
+            <div className="w-8 h-8 rounded-lg bg-[#ededeb] flex items-center justify-center p-1 shadow-xs overflow-hidden border border-slate-200">
+              <img src="/logo.png" alt="DealFlow360 Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="font-bold text-sm text-slate-900 leading-none">DealFlow360</div>
