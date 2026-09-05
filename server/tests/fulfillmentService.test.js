@@ -32,12 +32,16 @@ describe('Fulfillment Service & Optimization Integration Suite', () => {
       warehouseEast = await prisma.warehouse.create({
         data: { name: `East Depot ${Date.now()}`, location: 'New York', shippingCostWeight: 1.0 },
       });
+    } else {
+      await prisma.warehouse.update({ where: { id: warehouseEast.id }, data: { shippingCostWeight: 1.0 } });
     }
 
     if (!warehouseWest) {
       warehouseWest = await prisma.warehouse.create({
         data: { name: `West Depot ${Date.now()}`, location: 'California', shippingCostWeight: 2.0 },
       });
+    } else {
+      await prisma.warehouse.update({ where: { id: warehouseWest.id }, data: { shippingCostWeight: 2.0 } });
     }
 
     // Create unique product for fulfillment testing
