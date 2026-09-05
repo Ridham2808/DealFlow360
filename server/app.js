@@ -25,8 +25,10 @@ app.use(cors({
   origin: clientOrigin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+  exposedHeaders: ['Content-Disposition']
 }));
+
 
 // HTTP Logging with Morgan (format includes Request ID)
 morgan.token('req-id', (req) => req.id || '-');
@@ -40,6 +42,10 @@ app.use(cookieParser());
 const adminRoutes = require('./routes/adminRoutes');
 const approvalRoutes = require('./routes/approvalRoutes');
 const quotationRoutes = require('./routes/quotationRoutes');
+const fulfillmentRoutes = require('./routes/fulfillmentRoutes');
+const billingRoutes = require('./routes/billingRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
+const dealHealthRoutes = require('./routes/dealHealthRoutes');
 
 // Base API Routes
 app.use('/api', healthRoutes);
@@ -47,6 +53,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', approvalRoutes);
 app.use('/api/quotations', quotationRoutes);
+app.use('/api/fulfillment', fulfillmentRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api', billingRoutes); // Exposes /api/subscriptions
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/deal-health', dealHealthRoutes);
+
 
 // Placeholder index route
 app.get('/', (req, res) => {
