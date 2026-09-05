@@ -80,7 +80,7 @@ export function AuthProvider({ children }) {
       if (newUser?.role) {
         router.push(getRoleRedirectPath(newUser.role));
       } else {
-        router.push('/workspace/dashboard');
+        router.push('/dashboard');
       }
       return { success: true, user: newUser };
     } catch (err) {
