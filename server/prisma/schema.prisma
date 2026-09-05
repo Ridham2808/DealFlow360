@@ -40,8 +40,13 @@ enum CustomerTier {
 
 enum QuotationStatus {
   DRAFT
+  PENDING_APPROVAL
   IN_REVIEW
   APPROVED
+  REJECTED
+  RETURNED
+  UNDER_NEGOTIATION
+  CONFIRMED
   SENT_TO_CUSTOMER
   CUSTOMER_ACCEPTED
   CUSTOMER_REJECTED
@@ -53,6 +58,7 @@ enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+  RETURNED
 }
 
 enum BillingCycle {
@@ -71,6 +77,7 @@ enum InvoiceStatus {
 }
 
 enum RiskLevel {
+  NONE
   LOW
   MEDIUM
   HIGH
