@@ -79,6 +79,23 @@ class ProductService {
       throw new ApiError('Product not found.', 404, 'PRODUCT_NOT_FOUND');
     }
 
+    // Check if product has active inventory stock
+    const activeStock = await prisma.stockLevel.findFirst({
+      where: { productId: id, quantityOnHand: { gt: 0 } },
+    });
+    if (activeStock) {
+      throw new ApiError(
+        `Cannot delete product '${existing.sku}' because it has active inventory on hand in warehouse(s). Reduce stock or deactivate.`,
+        409,
+        'PRODUCT_HAS_STOCK_DEPENDENCY'
+      );
+    }
+
+    // Check if product is referenced by existing quotation lines
+    const quoteLineCount = await prisma.quotationLine.count({
+      where: { productId: id },
+    });
+
     const deactivated = await productRepository.softDelete(id);
 
     if (actorId) {
@@ -87,13 +104,17 @@ class ProductService {
         action: 'DELETED_PRODUCT',
         targetId: id,
         targetType: 'Product',
-        reasonNote: `Product ${existing.sku} set to inactive (soft deleted).`,
+        reasonNote: `Product ${existing.sku} soft-deleted. Referenced in ${quoteLineCount} quotation line(s).`,
         beforeStatus: 'ACTIVE',
         afterStatus: 'INACTIVE',
       });
     }
 
-    return deactivated;
+    return {
+      ...deactivated,
+      softDeleted: true,
+      referencedQuotationsCount: quoteLineCount,
+    };
   }
 
   async listVariants(productId) {
