@@ -33,9 +33,9 @@ export default function PortalLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0c10] text-[#ededed] font-sans antialiased selection:bg-blue-600/30">
+    <div className="h-screen flex flex-col bg-[#0a0c10] text-[#ededed] font-sans antialiased selection:bg-blue-600/30 overflow-hidden">
       {/* Customer Portal Top Nav - Exact mockup specification: My Quotation, Messages, Profile */}
-      <header className="h-14 bg-[#101217] border-b border-[#222533] px-6 flex items-center justify-between shadow-xs sticky top-0 z-40">
+      <header className="h-14 shrink-0 bg-[#101217] border-b border-[#222533] px-6 flex items-center justify-between shadow-xs sticky top-0 z-40">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-[#ededeb] flex items-center justify-center p-1 shadow-xs overflow-hidden border border-[#2e3347]">
@@ -49,7 +49,7 @@ export default function PortalLayout({ children }) {
             </div>
           </div>
 
-          {/* Navigation Items: My Quotation, Messages */}
+          {/* Navigation Items */}
           <nav className="flex items-center gap-1 text-xs">
             <a
               href="/portal"
@@ -60,17 +60,8 @@ export default function PortalLayout({ children }) {
               }`}
             >
               <FileText className="w-3.5 h-3.5 text-blue-400" />
-              My Quotation
+              Customer Portal
             </a>
-
-            <button
-              type="button"
-              onClick={() => alert('Messages history is linked directly to your active quotation comments and activity timeline below.')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium text-[#8e95a5] hover:text-white hover:bg-[#161821] transition-colors cursor-pointer"
-            >
-              <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-              Messages
-            </button>
           </nav>
         </div>
 
@@ -99,8 +90,8 @@ export default function PortalLayout({ children }) {
         </div>
       </header>
 
-      {/* Portal Content Area */}
-      <main className="p-6 max-w-6xl mx-auto w-full flex-1 animate-in fade-in duration-200">
+      {/* Portal Content Area — Scrollable */}
+      <main className="p-4 sm:p-6 max-w-6xl mx-auto w-full flex-1 overflow-y-auto animate-in fade-in duration-200">
         {children}
       </main>
 

@@ -68,6 +68,7 @@ async function main() {
   // ══════════════════════════════════════════════════════════════════════════
   console.log('[Seed] Purging old transactional data…');
   await prisma.dealHealthFlag.deleteMany();
+  await prisma.customerRequest.deleteMany();
   await prisma.billingSchedule.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.fulfillmentSplit.deleteMany();
@@ -365,7 +366,7 @@ async function main() {
   const catCeilings = [
     { category: 'Hardware',       maxDiscountPercent: 15.00 },
     { category: 'Services',       maxDiscountPercent: 10.00 },
-    { category: 'Warranty',       maxDiscountPercent: 5.00  },
+    { category: 'Warranty',       maxDiscountPercent: 15.00 },
     { category: 'Subscriptions',  maxDiscountPercent: 8.00  },
   ];
   for (const cc of catCeilings) {
@@ -1163,6 +1164,84 @@ async function main() {
   console.log(`[Seed] ✓ ${healthFlags.length} deal health flags created.\n`);
 
   // ══════════════════════════════════════════════════════════════════════════
+  // STEP 16 — INBOUND CUSTOMER REQUESTS (RFQs) (5)
+  // ══════════════════════════════════════════════════════════════════════════
+  console.log('[Seed] Seeding inbound customer quote requests (RFQs)…');
+  const custRequests = [
+    {
+      requestNumber: 'REQ-1001',
+      customerId: customers['Acme Corp'].id,
+      title: 'Engineering Workstations & Docking Setup for 15 Developers',
+      status: 'PENDING',
+      targetBudget: 45000.00,
+      neededByDate: daysFromNow(21),
+      notes: 'Urgent expansion for our new enterprise engineering cluster. Please prioritize high memory laptops and dual-display docks.',
+      items: [
+        { name: 'Laptop Pro 14 (32GB / 1TB)', quantity: 15, category: 'Hardware', notes: 'Configured for high load dev' },
+        { name: 'Thunderbolt 4 Docking Station', quantity: 15, category: 'Hardware', notes: 'Dual 4K output' },
+        { name: 'Enterprise Deployment & Onboarding', quantity: 1, category: 'Services', notes: 'Remote setup & image deployment' },
+        { name: 'Extended Care Warranty (3-Year)', quantity: 15, category: 'Warranty', notes: '24/7 next business day on-site' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1002',
+      customerId: customers['NovaTech Solutions'].id,
+      title: 'Annual Cloud Collaboration & Dedicated Technical Support',
+      status: 'PENDING',
+      targetBudget: 18000.00,
+      neededByDate: daysFromNow(14),
+      notes: 'Renewal with license seat expansion from 20 to 50 active engineers.',
+      items: [
+        { name: 'Cloud Collaboration Suite (Annual)', quantity: 50, category: 'Subscriptions', notes: 'Annual prepaid commitment' },
+        { name: 'Dedicated Technical Account Manager', quantity: 1, category: 'Services', notes: 'Quarterly architecture reviews' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1003',
+      customerId: customers['Beta Industries'].id,
+      title: 'Office Hardware Refresh - Laptops & 27" Displays',
+      status: 'PENDING',
+      targetBudget: 28000.00,
+      neededByDate: daysFromNow(30),
+      notes: 'Standard office setup for Q4 cohort. Standard warranty acceptable.',
+      items: [
+        { name: 'Laptop Pro 14 (16GB / 512GB)', quantity: 10, category: 'Hardware', notes: 'Standard build' },
+        { name: 'UltraSharp 27" 4K Monitor', quantity: 10, category: 'Hardware', notes: 'USB-C hub version' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1004',
+      customerId: customers['Summit Retail Co'].id,
+      title: 'Retail POS Terminals and Peripheral Expansion',
+      status: 'REVIEWED',
+      targetBudget: 12500.00,
+      neededByDate: daysFromNow(10),
+      notes: 'Reviewed with store operations manager. Rep to prepare formal quote.',
+      items: [
+        { name: 'POS Touch Terminal Station', quantity: 6, category: 'Hardware', notes: 'Ruggedized casing' },
+        { name: 'Thermal Receipt Printers', quantity: 6, category: 'Hardware', notes: 'Ethernet + Bluetooth' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1005',
+      customerId: customers['Crest Logistics'].id,
+      title: 'Logistics Fleet Rugged Tablets',
+      status: 'QUOTED',
+      targetBudget: 35000.00,
+      neededByDate: daysFromNow(45),
+      notes: 'Draft quote generated and sent to customer.',
+      items: [
+        { name: 'Rugged 10-inch Warehouse Tablet', quantity: 20, category: 'Hardware', notes: 'Barcode scanner integrated' },
+      ],
+    },
+  ];
+
+  for (const cr of custRequests) {
+    await prisma.customerRequest.create({ data: cr });
+  }
+  console.log('[Seed] ✓ Inbound customer requests seeded.\n');
+
+  // ══════════════════════════════════════════════════════════════════════════
   // SUMMARY
   // ══════════════════════════════════════════════════════════════════════════
   const counts = {
@@ -1175,6 +1254,7 @@ async function main() {
     priceLists: await prisma.priceList.count(),
     upsellRules: await prisma.upsellRule.count(),
     subPlans: await prisma.subscriptionPlan.count(),
+    customerRequests: await prisma.customerRequest.count(),
     quotations: await prisma.quotation.count(),
     quotationLines: await prisma.quotationLine.count(),
     approvalSteps: await prisma.approvalStep.count(),
