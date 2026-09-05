@@ -48,6 +48,7 @@ const invoiceRoutes = require('./routes/invoiceRoutes');
 const dealHealthRoutes = require('./routes/dealHealthRoutes');
 const portalRoutes = require('./routes/portalRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const customerRequestRoutes = require('./routes/customerRequestRoutes');
 
 // Base API Routes
 app.use('/api', healthRoutes);
@@ -55,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', approvalRoutes);
 app.use('/api/quotations', quotationRoutes);
+app.use('/api/customer-requests', customerRequestRoutes);
 app.use('/api/fulfillment', fulfillmentRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api', billingRoutes); // Exposes /api/subscriptions
