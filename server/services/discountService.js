@@ -13,6 +13,13 @@ class DiscountService {
       throw new ApiError('Discount tier not found.', 404, 'DISCOUNT_TIER_NOT_FOUND');
     }
 
+    if (updates.maxDiscountPercent !== undefined) {
+      const discount = Number(updates.maxDiscountPercent);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        throw new ApiError('Maximum discount percent must be a valid number between 0% and 100%.', 400, 'INVALID_DISCOUNT_PERCENT');
+      }
+    }
+
     const updated = await discountRepository.updateTier(id, updates);
 
     if (actorId) {
@@ -37,6 +44,13 @@ class DiscountService {
     const existing = await discountRepository.findCeilingById(id);
     if (!existing) {
       throw new ApiError('Category discount ceiling not found.', 404, 'CATEGORY_CEILING_NOT_FOUND');
+    }
+
+    if (updates.maxDiscountPercent !== undefined) {
+      const discount = Number(updates.maxDiscountPercent);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        throw new ApiError('Maximum discount percent must be a valid number between 0% and 100%.', 400, 'INVALID_DISCOUNT_PERCENT');
+      }
     }
 
     const updated = await discountRepository.updateCeiling(id, updates);

@@ -15,7 +15,7 @@ export default function RootPage() {
         if (user.role === 'CUSTOMER') {
           router.replace('/portal');
         } else {
-          router.replace('/workspace/dashboard');
+          router.replace('/dashboard');
         }
       } else {
         router.replace('/login');

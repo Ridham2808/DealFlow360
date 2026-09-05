@@ -65,6 +65,7 @@ router.patch('/category-ceilings/:id',              requireAdmin,          (req,
 
 // ── Approval Chain Rules ────────────────────────────────────────────────
 router.get('/approval-chain-rules',                requireAdminOrManager, (req, res, next) => approvalRuleController.listRules(req, res, next));
+router.post('/approval-chain-rules/preview',        requireAdminOrManager, (req, res, next) => approvalRuleController.previewRouting(req, res, next));
 router.patch('/approval-chain-rules/:id',           requireAdmin,          (req, res, next) => approvalRuleController.updateRule(req, res, next));
 
 // ── Pricing Resolution ──────────────────────────────────────────────────

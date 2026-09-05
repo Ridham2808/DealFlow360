@@ -135,7 +135,7 @@ export default function AuthPage({ defaultTab }) {
       // Redirect based on role
       const role = invPreview?.role || res.data?.data?.user?.role;
       setTimeout(() => {
-        window.location.href = role === 'CUSTOMER' ? '/portal' : '/workspace/dashboard';
+        window.location.href = role === 'CUSTOMER' ? '/portal' : '/dashboard';
       }, 1200);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to activate account.';

@@ -22,6 +22,15 @@ class ApprovalRuleController {
       next(err);
     }
   }
+
+  async previewRouting(req, res, next) {
+    try {
+      const result = await approvalRuleService.previewRouting(req.body);
+      return res.status(200).json(success(result, 'Simulated approval routing preview generated.'));
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = new ApprovalRuleController();
