@@ -108,6 +108,7 @@ model User {
   approvalSteps        ApprovalStep[]
   auditLogsAsActor     AuditLog[]     @relation("AuditActor")
   invitationsCreated   Invitation[]   @relation("InvitedBy")
+  customerRequests     CustomerRequest[] @relation("CustomerUserRequests")
 
   @@index([email])
   @@index([role])
@@ -128,6 +129,7 @@ model Customer {
   users        User[]
   quotations   Quotation[]
   invitations  Invitation[]
+  customerRequests CustomerRequest[]
 
   @@index([email])
   @@index([tier])
@@ -385,6 +387,7 @@ model Quotation {
   fulfillmentSplits FulfillmentSplit[]
   invoices         Invoice[]
   dealHealthFlags  DealHealthFlag[]
+  customerRequests CustomerRequest[] @relation("QuotationCustomerRequest")
 
   @@index([quoteNumber])
   @@index([status])
@@ -528,4 +531,38 @@ model DealHealthFlag {
 
   @@index([quotationId])
   @@index([isResolved])
+}
+
+// -------------------------------------------------------------
+// CUSTOMER INBOUND REQUESTS (RFQ)
+// -------------------------------------------------------------
+
+enum CustomerRequestStatus {
+  PENDING
+  REVIEWED
+  QUOTED
+  DECLINED
+}
+
+model CustomerRequest {
+  id            String                @id @default(uuid())
+  requestNumber String                @unique
+  customerId    String
+  customer      Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  requestedById String?
+  requestedBy   User?                 @relation("CustomerUserRequests", fields: [requestedById], references: [id], onDelete: SetNull)
+  title         String
+  status        CustomerRequestStatus @default(PENDING)
+  notes         String?
+  targetBudget  Decimal?              @db.Decimal(12, 2)
+  neededByDate  DateTime?
+  items         Json                  // [{ name, quantity, category, notes, estimatedUnitPrice }]
+  quotationId   String?
+  quotation     Quotation?            @relation("QuotationCustomerRequest", fields: [quotationId], references: [id], onDelete: SetNull)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
 }

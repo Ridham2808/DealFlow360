@@ -146,4 +146,97 @@ router.get('/quotations/:id/activity', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/portal/catalog
+ * Public catalog view for customer quote requests (safe fields only)
+ */
+router.get('/catalog', async (req, res, next) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        category: true,
+        basePrice: true,
+        description: true,
+        isRecurringEligible: true,
+      },
+      orderBy: { category: 'asc' },
+    });
+    return res.status(200).json(success({ products }, 'Catalog loaded'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/portal/requests
+ * List quote requests submitted by this customer
+ */
+router.get('/requests', async (req, res, next) => {
+  try {
+    const requests = await prisma.customerRequest.findMany({
+      where: { customerId: req.customerId },
+      include: {
+        quotation: {
+          select: { id: true, quoteNumber: true, status: true, grandTotal: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.status(200).json(success({ requests }, 'Customer requests loaded'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/portal/requests
+ * Submit a new quote request (RFQ) from customer to sales team
+ */
+router.post('/requests', async (req, res, next) => {
+  try {
+    const { title, notes, targetBudget, neededByDate, items } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json(error('Please provide a title or project description for your request.', 400, 'VALIDATION_ERROR'));
+    }
+
+    const cleanItems = Array.isArray(items) && items.length > 0 ? items : [
+      { name: title.trim(), quantity: 1, category: 'Hardware', notes: notes || '' }
+    ];
+
+    const count = await prisma.customerRequest.count();
+    const requestNumber = `REQ-${1000 + count + 1}`;
+
+    const newRequest = await prisma.customerRequest.create({
+      data: {
+        requestNumber,
+        customerId: req.customerId,
+        requestedById: req.user.userId,
+        title: title.trim(),
+        notes: notes ? notes.trim() : null,
+        targetBudget: targetBudget ? parseFloat(targetBudget) : null,
+        neededByDate: neededByDate ? new Date(neededByDate) : null,
+        items: cleanItems,
+        status: 'PENDING',
+      },
+      include: {
+        customer: { select: { id: true, name: true, tier: true } },
+      },
+    });
+
+    return res.status(201).json(
+      success(
+        { request: newRequest },
+        `Your quote request (${newRequest.requestNumber}) has been sent to your sales representative.`
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
