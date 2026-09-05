@@ -5,6 +5,7 @@ const productController = require('../controllers/productController');
 const priceListController = require('../controllers/priceListController');
 const discountController = require('../controllers/discountController');
 const approvalRuleController = require('../controllers/approvalRuleController');
+const warehouseController = require('../controllers/warehouseController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
 
@@ -63,5 +64,13 @@ router.patch('/category-ceilings/:id',              requireAdmin,          (req,
 // ── Approval Chain Rules ────────────────────────────────────────────────
 router.get('/approval-chain-rules',                requireAdminOrManager, (req, res, next) => approvalRuleController.listRules(req, res, next));
 router.patch('/approval-chain-rules/:id',           requireAdmin,          (req, res, next) => approvalRuleController.updateRule(req, res, next));
+
+// ── Warehouses & Stock Levels ───────────────────────────────────────────
+router.get('/warehouses',                          requireAdminOrManager, (req, res, next) => warehouseController.listWarehouses(req, res, next));
+router.post('/warehouses',                         requireAdmin,          (req, res, next) => warehouseController.createWarehouse(req, res, next));
+router.get('/warehouses/:id',                      requireAdminOrManager, (req, res, next) => warehouseController.getWarehouse(req, res, next));
+router.patch('/warehouses/:id',                     requireAdmin,          (req, res, next) => warehouseController.updateWarehouse(req, res, next));
+router.get('/warehouses/:id/stock',                requireAdminOrManager, (req, res, next) => warehouseController.getStock(req, res, next));
+router.patch('/warehouses/:id/stock/:productId',    requireAdmin,          (req, res, next) => warehouseController.updateStock(req, res, next));
 
 module.exports = router;
