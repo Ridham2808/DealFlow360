@@ -17,5 +17,6 @@ router.post('/invitation/accept',   (req, res, next) => authController.acceptInv
 
 // ── Authenticated session ────────────────────────────────────────────
 router.get('/me', authMiddleware, (req, res, next) => authController.getMe(req, res, next));
+router.patch('/profile', authMiddleware, (req, res, next) => authController.updateProfile(req, res, next));
 
 module.exports = router;

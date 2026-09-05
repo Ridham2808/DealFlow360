@@ -1,347 +1,416 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Download, 
-  RefreshCw, 
-  DollarSign, 
-  Layers, 
-  Clock, 
-  ShieldCheck, 
+import React, { useState, useEffect, useCallback } from 'react';
+import { api } from '../../../lib/api';
+import {
+  BarChart3,
+  Download,
+  RefreshCw,
+  Clock,
+  Sparkles,
+  DollarSign,
+  TrendingUp,
+  AlertTriangle,
+  FileSpreadsheet,
+  FileText,
+  Filter,
+  RotateCcw,
+  Loader2,
   CheckCircle2,
-  Calendar,
-  Filter
+  Layers,
+  ChevronDown
 } from 'lucide-react';
-import { apiRequest } from '../../../lib/api';
 
-export default function ReportsPage() {
+export default function AdminReportingDashboard() {
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(null); // 'pdf' | 'xlsx' | null
   const [error, setError] = useState(null);
   const [data, setData] = useState({
-    summary: {
-      totalRevenue: 0,
-      collectedRevenue: 0,
-      avgMargin: 0,
-      avgDiscount: 0,
-      activeQuotes: 0,
-      approvalRate: '92%',
-      fulfillmentSla: '98.4%',
+    kpis: {
+      quotesCreated: 0,
+      ordersConverted: 0,
+      conversionRate: 0,
+      grossRevenue: 0,
+      totalDiscount: 0,
+      avgMarginPercent: 0,
+      avgApprovalTimeHours: 2.4,
+      atRiskQuotesCount: 0,
+      topUpsellProduct: 'Docking Station',
     },
-    funnel: [],
-    discountLeakage: [],
-    categoryBreakdown: [],
+    topProducts: [],
+    productsReference: [],
+    quotations: [],
   });
 
-  const [dateRange, setDateRange] = useState('ALL');
+  // Filter State
+  const [period, setPeriod] = useState('ALL');
+  const [salesRepId, setSalesRepId] = useState('ALL');
+  const [approvalStatus, setApprovalStatus] = useState('ALL');
+  const [productCategory, setProductCategory] = useState('ALL');
 
-  const fetchReports = async () => {
+  // Reps list
+  const [salesReps, setSalesReps] = useState([]);
+
+  // Fetch sales reps for filter dropdown
+  useEffect(() => {
+    async function loadReps() {
+      try {
+        const res = await api.get('/admin/users');
+        const users = res?.data?.users || [];
+        setSalesReps(users.filter((u) => u.role === 'SALES_REP' || u.role === 'SALES_MANAGER'));
+      } catch {
+        // Ignore if user lacks permission to list all users
+      }
+    }
+    loadReps();
+  }, []);
+
+  // Fetch reporting metrics from backend
+  const fetchReportData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      const params = new URLSearchParams();
+      if (period !== 'ALL') params.append('period', period.toLowerCase());
+      if (salesRepId !== 'ALL') params.append('salesRepId', salesRepId);
+      if (approvalStatus !== 'ALL') params.append('approvalStatus', approvalStatus);
+      if (productCategory !== 'ALL') params.append('productCategory', productCategory);
 
-      // Fetch quotations, invoices, and subscriptions to compute live operational telemetry
-      const [quotesRes, invoicesRes, subsRes] = await Promise.all([
-        apiRequest('/quotations?limit=100').catch(() => ({ data: { quotations: [] } })),
-        apiRequest('/invoices?limit=100').catch(() => ({ data: { items: [] } })),
-        apiRequest('/billing/subscriptions?limit=100').catch(() => ({ data: { items: [] } })),
-      ]);
-
-      const quotes = quotesRes?.data?.quotations || [];
-      const invoices = invoicesRes?.data?.items || [];
-      const subs = subsRes?.data?.items || [];
-
-      // Calculate totals
-      let grossTotal = 0;
-      let totalCost = 0;
-      let totalDiscount = 0;
-      quotes.forEach((q) => {
-        grossTotal += Number(q.grandTotal || 0);
-        totalCost += Number(q.totalCost || 0);
-        totalDiscount += Number(q.discountTotal || 0);
-      });
-
-      let collectedRevenue = 0;
-      invoices.forEach((inv) => {
-        if (inv.status === 'PAID') {
-          collectedRevenue += Number(inv.amount || 0);
-        }
-      });
-
-      const avgMargin = grossTotal > 0 ? Math.max(0, ((grossTotal - totalCost) / grossTotal) * 100) : 28.5;
-      const avgDiscount = grossTotal > 0 ? (totalDiscount / (grossTotal + totalDiscount)) * 100 : 8.2;
-
-      // Funnel breakdown
-      const draftCount = quotes.filter((q) => q.status === 'DRAFT').length;
-      const pendingApprovalCount = quotes.filter((q) => q.status === 'PENDING_APPROVAL').length;
-      const approvedCount = quotes.filter((q) => q.status === 'APPROVED').length;
-      const confirmedCount = quotes.filter((q) => q.status === 'CONFIRMED').length;
-
-      setData({
-        summary: {
-          totalRevenue: grossTotal > 0 ? grossTotal : 148520,
-          collectedRevenue: collectedRevenue > 0 ? collectedRevenue : 94200,
-          avgMargin: avgMargin > 0 ? avgMargin : 31.4,
-          avgDiscount: avgDiscount > 0 ? avgDiscount : 6.8,
-          activeQuotes: quotes.length || 24,
-          approvalRate: '94.2%',
-          fulfillmentSla: '98.6%',
-        },
-        funnel: [
-          { stage: 'Draft Quotes', count: draftCount || 8, conversion: '100%', value: '$34,200' },
-          { stage: 'Under Review', count: pendingApprovalCount || 3, conversion: '75%', value: '$18,900' },
-          { stage: 'Governance Approved', count: approvedCount || 12, conversion: '88%', value: '$84,500' },
-          { stage: 'Fulfillment & Invoiced', count: confirmedCount || 9, conversion: '95%', value: '$68,200' },
-        ],
-        discountLeakage: [
-          { category: 'Hardware (Laptop / Workstations)', maxCap: '15.0%', avgGiven: '11.8%', compliance: '96.2%', status: 'Normal' },
-          { category: 'Services & Implementation', maxCap: '10.0%', avgGiven: '8.4%', compliance: '98.1%', status: 'Optimal' },
-          { category: 'Cloud Subscriptions & SaaS', maxCap: '20.0%', avgGiven: '14.2%', compliance: '94.5%', status: 'Normal' },
-        ],
-        categoryBreakdown: [
-          { name: 'Hardware Units', revenue: '$82,450', share: '55.5%', orders: 18 },
-          { name: 'Recurring Cloud SaaS', revenue: '$44,120', share: '29.7%', orders: 12 },
-          { name: 'Professional Services', revenue: '$21,950', share: '14.8%', orders: 7 },
-        ],
-      });
+      const res = await api.get(`/reports/summary?${params.toString()}`);
+      if (res?.data) {
+        setData(res.data);
+      }
     } catch (err) {
-      setError(err.message || 'Failed to load report analytics');
+      setError(err.message || 'Failed to generate report telemetry.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [period, salesRepId, approvalStatus, productCategory]);
 
   useEffect(() => {
-    fetchReports();
-  }, []);
+    fetchReportData();
+  }, [fetchReportData]);
 
-  const handleExportCsv = () => {
-    const csvContent = [
-      ['Metric', 'Value'],
-      ['Pipeline Revenue', `$${data.summary.totalRevenue.toLocaleString()}`],
-      ['Collected Revenue', `$${data.summary.collectedRevenue.toLocaleString()}`],
-      ['Blended Margin', `${data.summary.avgMargin.toFixed(1)}%`],
-      ['Avg Discount Given', `${data.summary.avgDiscount.toFixed(1)}%`],
-      ['Approval Compliance Rate', data.summary.approvalRate],
-      ['Fulfillment SLA', data.summary.fulfillmentSla],
-      [],
-      ['Stage', 'Count', 'Conversion', 'Value'],
-      ...data.funnel.map((f) => [f.stage, f.count, f.conversion, f.value]),
-    ]
-      .map((row) => row.join(','))
-      .join('\n');
+  // Handle real server file export (PDF or XLSX)
+  const handleExport = async (format) => {
+    try {
+      setExporting(format);
+      const params = new URLSearchParams();
+      params.append('format', format);
+      if (period !== 'ALL') params.append('period', period.toLowerCase());
+      if (salesRepId !== 'ALL') params.append('salesRepId', salesRepId);
+      if (approvalStatus !== 'ALL') params.append('approvalStatus', approvalStatus);
+      if (productCategory !== 'ALL') params.append('productCategory', productCategory);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `dealflow360_operational_report_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const res = await fetch(`http://localhost:5000/api/reports/export?${params.toString()}`, {
+        credentials: 'include',
+      });
+
+      if (!res.ok) throw new Error(`Export failed with HTTP ${res.status}`);
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dealflow360-report-${new Date().toISOString().slice(0, 10)}.${format === 'xlsx' ? 'xlsx' : 'pdf'}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      alert(`Export error: ${err.message}`);
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const resetFilters = () => {
+    setPeriod('ALL');
+    setSalesRepId('ALL');
+    setApprovalStatus('ALL');
+    setProductCategory('ALL');
   };
 
   return (
-    <div className="min-h-[calc(100vh-70px)] bg-[#080808] text-[#f0f0f2] p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Screen #15 Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1c1d25]">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header: Admin / Reporting Dashboard (Optional) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#222533] pb-5">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Executive & Operational Reports
-            </h1>
+          <div className="text-[11px] font-semibold text-blue-400 uppercase tracking-wider mb-1">
+            Executive Telemetry
           </div>
-          <p className="text-xs sm:text-sm text-[#8a8b98] mt-1">
-            Authoritative intelligence across quotations, discount governance, warehouse fulfillment, and subscription cash flow.
+          <h1 className="text-xl font-bold text-white tracking-tight">
+            Admin / Reporting Dashboard <span className="text-xs font-normal text-[#8e95a5]">(Optional)</span>
+          </h1>
+          <p className="text-xs text-[#8e95a5] mt-1">
+            Authoritative revenue analytics, approval speed, and catalog compliance generated directly from operational transactions.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        {/* Real Export Action Buttons */}
+        <div className="flex items-center gap-2.5">
           <button
-            onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#14151e] border border-[#27293b] hover:border-[#3a3c55] text-xs font-semibold text-white transition-all cursor-pointer shadow-sm"
+            onClick={() => handleExport('pdf')}
+            disabled={exporting !== null}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#1c202e] hover:bg-[#252a3d] border border-[#2e3347] text-xs font-semibold text-white transition-colors cursor-pointer disabled:opacity-50"
           >
-            <Download className="w-3.5 h-3.5 text-blue-400" />
-            <span>Export CSV</span>
+            {exporting === 'pdf' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+            ) : (
+              <FileText className="w-3.5 h-3.5 text-red-400" />
+            )}
+            <span>Export PDF</span>
           </button>
 
           <button
-            onClick={fetchReports}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#14151e] border border-[#27293b] hover:border-[#3a3c55] text-xs text-[#8a8c9e] hover:text-white transition-all cursor-pointer"
+            onClick={() => handleExport('xlsx')}
+            disabled={exporting !== null}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#1c202e] hover:bg-[#252a3d] border border-[#2e3347] text-xs font-semibold text-white transition-colors cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-400' : ''}`} />
-            <span>Refresh</span>
+            {exporting === 'xlsx' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+            ) : (
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+            )}
+            <span>Export XLS</span>
+          </button>
+
+          <button
+            onClick={fetchReportData}
+            disabled={loading}
+            className="p-2 rounded-lg bg-[#12141a] border border-[#222533] text-[#8e95a5] hover:text-white hover:bg-[#1c202e] transition-colors"
+            title="Refresh reports"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
+      {/* Compact Filter Row: Period, Sales Team, Approval Status, Product Category */}
+      <div className="bg-[#12141a] border border-[#222533] rounded-xl p-3.5 flex flex-wrap items-center gap-3 text-xs shadow-xs">
+        <div className="flex items-center gap-1.5 text-[#8e95a5] font-medium mr-1">
+          <Filter className="w-3.5 h-3.5 text-blue-400" />
+          <span>Filters:</span>
+        </div>
+
+        {/* Period Filter */}
+        <select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+          className="bg-[#0a0c10] border border-[#272a38] text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:border-blue-500"
+        >
+          <option value="ALL">Period: All Time</option>
+          <option value="TODAY">Period: Today</option>
+          <option value="WEEK">Period: Last 7 Days</option>
+          <option value="MONTH">Period: Last 30 Days</option>
+        </select>
+
+        {/* Sales Team Filter */}
+        <select
+          value={salesRepId}
+          onChange={(e) => setSalesRepId(e.target.value)}
+          className="bg-[#0a0c10] border border-[#272a38] text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:border-blue-500 max-w-[160px]"
+        >
+          <option value="ALL">Sales Team: All Reps</option>
+          {salesReps.map((rep) => (
+            <option key={rep.id} value={rep.id}>
+              {rep.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Approval Status Filter */}
+        <select
+          value={approvalStatus}
+          onChange={(e) => setApprovalStatus(e.target.value)}
+          className="bg-[#0a0c10] border border-[#272a38] text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:border-blue-500"
+        >
+          <option value="ALL">Status: All Statuses</option>
+          <option value="DRAFT">Status: Draft</option>
+          <option value="PENDING_APPROVAL">Status: Pending Approval</option>
+          <option value="APPROVED">Status: Approved</option>
+          <option value="CONFIRMED">Status: Confirmed</option>
+          <option value="REJECTED">Status: Rejected</option>
+        </select>
+
+        {/* Product / Category Filter */}
+        <select
+          value={productCategory}
+          onChange={(e) => setProductCategory(e.target.value)}
+          className="bg-[#0a0c10] border border-[#272a38] text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:border-blue-500"
+        >
+          <option value="ALL">Category: All Categories</option>
+          <option value="Hardware">Category: Hardware</option>
+          <option value="Services">Category: Services</option>
+          <option value="Warranty">Category: Warranty</option>
+          <option value="Subscriptions">Category: Subscriptions</option>
+        </select>
+
+        {(period !== 'ALL' || salesRepId !== 'ALL' || approvalStatus !== 'ALL' || productCategory !== 'ALL') && (
+          <button
+            onClick={resetFilters}
+            className="flex items-center gap-1 text-[#8e95a5] hover:text-white px-2 py-1 text-xs transition-colors ml-auto cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Reset</span>
+          </button>
+        )}
+      </div>
+
+      {/* Error state with retry */}
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={fetchReports} className="underline hover:text-white font-medium">Retry</button>
+        <div className="p-4 bg-red-950/40 border border-red-800/50 rounded-xl flex items-center justify-between text-xs text-red-300">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-400" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={fetchReportData}
+            className="px-3 py-1 bg-red-900/60 hover:bg-red-800 text-white rounded-md text-xs transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
-      {/* Screen #15 Executive KPI Metrics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#0e0f14] border border-[#1b1c26] rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-[#8a8b98]">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Total Pipeline</span>
-            <DollarSign className="w-4 h-4 text-emerald-400" />
+      {/* Statistic Cards (Mockup Requirement: Quotes Created, Avg Approval Time, Top Upsell Product) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Quotes Created */}
+        <div className="bg-[#12141a] border border-[#222533] rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-[#8e95a5] mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Quotes Created</span>
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <BarChart3 className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-white">
-            ${Number(data.summary.totalRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          <div className="text-2xl font-bold text-white tracking-tight">
+            {loading ? <Loader2 className="w-5 h-5 animate-spin text-blue-400" /> : data.kpis.quotesCreated}
           </div>
-          <p className="text-[11px] text-[#717386]">Gross quotation volume</p>
+          <div className="text-[11px] text-[#8e95a5] mt-1.5 flex items-center gap-1.5">
+            <span className="text-emerald-400 font-medium">
+              {data.kpis.conversionRate}% conversion
+            </span>
+            <span>({data.kpis.ordersConverted} orders)</span>
+          </div>
         </div>
 
-        <div className="bg-[#0e0f14] border border-[#1b1c26] rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-[#8a8b98]">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Collected Cash</span>
-            <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+        {/* Card 2: Avg Approval Time */}
+        <div className="bg-[#12141a] border border-[#222533] rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-[#8e95a5] mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Avg Approval Time</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <Clock className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-cyan-400">
-            ${Number(data.summary.collectedRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          <div className="text-2xl font-bold text-white tracking-tight">
+            {loading ? <Loader2 className="w-5 h-5 animate-spin text-amber-400" /> : `${data.kpis.avgApprovalTimeHours} hrs`}
           </div>
-          <p className="text-[11px] text-[#717386]">Paid one-time & recurring invoices</p>
+          <div className="text-[11px] text-[#8e95a5] mt-1.5">
+            Target SLA: &lt; 4.0 hours across tiers
+          </div>
         </div>
 
-        <div className="bg-[#0e0f14] border border-[#1b1c26] rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-[#8a8b98]">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Blended Margin</span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+        {/* Card 3: Top Upsell Product */}
+        <div className="bg-[#12141a] border border-[#222533] rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-[#8e95a5] mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Top Upsell Product</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-emerald-400">
-            {Number(data.summary.avgMargin).toFixed(1)}%
+          <div className="text-base font-bold text-white truncate tracking-tight">
+            {loading ? <Loader2 className="w-5 h-5 animate-spin text-emerald-400" /> : data.kpis.topUpsellProduct}
           </div>
-          <p className="text-[11px] text-[#717386]">Net profitability over COGS</p>
+          <div className="text-[11px] text-emerald-400 mt-1.5">
+            Highest attachment margin rate
+          </div>
         </div>
 
-        <div className="bg-[#0e0f14] border border-[#1b1c26] rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-[#8a8b98]">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Fulfillment SLA</span>
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
+        {/* Card 4: Gross Revenue */}
+        <div className="bg-[#12141a] border border-[#222533] rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-[#8e95a5] mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Gross Revenue</span>
+            <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <DollarSign className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-purple-400">
-            {data.summary.fulfillmentSla}
+          <div className="text-2xl font-bold text-white tracking-tight">
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+            ) : (
+              `$${data.kpis.grossRevenue.toLocaleString()}`
+            )}
           </div>
-          <p className="text-[11px] text-[#717386]">Dispatched within target window</p>
+          <div className="text-[11px] text-[#8e95a5] mt-1.5 flex items-center gap-1.5">
+            <span>Avg margin: {data.kpis.avgMarginPercent}%</span>
+            <span className="text-amber-400/80">(-${data.kpis.totalDiscount.toLocaleString()} disc)</span>
+          </div>
         </div>
       </div>
 
-      {/* Screen #15 Section 1: Quote-to-Cash Funnel */}
-      <div className="bg-[#0e0f14] border border-[#1b1c26] rounded-2xl overflow-hidden shadow-sm">
-        <div className="p-4 sm:p-5 border-b border-[#1a1b26] flex items-center justify-between">
+      {/* Products Reference Table (Mockup requirement) */}
+      <div className="bg-[#12141a] border border-[#222533] rounded-xl overflow-hidden shadow-xs">
+        <div className="px-5 py-3.5 border-b border-[#222533] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-400" />
-            <h2 className="text-sm font-bold text-white tracking-tight">Quote-to-Cash Operational Funnel</h2>
+            <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
+              Products Reference Table
+            </h2>
           </div>
-          <span className="text-xs text-[#727486]">Pipeline conversion performance</span>
+          <span className="text-[11px] text-[#8e95a5]">
+            {data.productsReference?.length || 0} active catalog items
+          </span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#12131b] border-b border-[#1c1d27] text-[#787a8c] uppercase font-mono text-[10px] tracking-wider">
-                <th className="py-3 px-5 font-semibold">Pipeline Stage</th>
-                <th className="py-3 px-5 font-semibold text-right">Active Deals</th>
-                <th className="py-3 px-5 font-semibold text-right">Conversion Velocity</th>
-                <th className="py-3 px-5 font-semibold text-right">Stage Economic Value</th>
+              <tr className="border-b border-[#222533] text-[11px] font-semibold text-[#8e95a5] uppercase tracking-wider bg-[#0d0f14]">
+                <th className="py-2.5 px-4">Product Name</th>
+                <th className="py-2.5 px-4">Category</th>
+                <th className="py-2.5 px-4 text-right">Base Price</th>
+                <th className="py-2.5 px-4 text-center">Units Sold</th>
+                <th className="py-2.5 px-4 text-right">Total Revenue</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#181923]">
-              {data.funnel.map((item, idx) => (
-                <tr key={idx} className="hover:bg-[#13141d]">
-                  <td className="py-3.5 px-5 font-medium text-white flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span>{item.stage}</span>
-                  </td>
-                  <td className="py-3.5 px-5 text-right font-mono text-[#dcdce5]">
-                    {item.count}
-                  </td>
-                  <td className="py-3.5 px-5 text-right font-mono font-semibold text-emerald-400">
-                    {item.conversion}
-                  </td>
-                  <td className="py-3.5 px-5 text-right font-mono font-bold text-white">
-                    {item.value}
+            <tbody className="divide-y divide-[#1e212d] text-xs">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-[#8e95a5]">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-400" />
+                    <span>Aggregating catalog telemetry...</span>
                   </td>
                 </tr>
-              ))}
+              ) : data.productsReference?.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-[#8e95a5]">
+                    No products found matching the selected filter criteria.
+                  </td>
+                </tr>
+              ) : (
+                data.productsReference?.map((p) => (
+                  <tr key={p.id} className="hover:bg-[#161822] transition-colors">
+                    <td className="py-3 px-4 font-medium text-white">{p.name}</td>
+                    <td className="py-3 px-4">
+                      <span className="px-2 py-0.5 rounded bg-[#1c202e] border border-[#2e3347] text-[10px] text-[#c5c9d6]">
+                        {p.category}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-[#c5c9d6]">
+                      ${p.basePrice?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-center font-mono text-white font-medium">
+                      {p.unitsSold}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono font-semibold text-white">
+                      ${p.revenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Screen #15 Section 2: Discount Governance & Leakage Monitoring */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#0e0f14] border border-[#1b1c26] rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-4 sm:p-5 border-b border-[#1a1b26] flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white tracking-tight">Discount Governance by Product Category</h2>
-            <span className="text-xs text-[#727486]">Policy adherence</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#12131b] border-b border-[#1c1d27] text-[#787a8c] uppercase font-mono text-[10px] tracking-wider">
-                  <th className="py-3 px-5 font-semibold">Category</th>
-                  <th className="py-3 px-5 font-semibold text-right">Policy Limit</th>
-                  <th className="py-3 px-5 font-semibold text-right">Avg Granted</th>
-                  <th className="py-3 px-5 font-semibold text-right">Compliance</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#181923]">
-                {data.discountLeakage.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-[#13141d]">
-                    <td className="py-3.5 px-5 font-medium text-white">{row.category}</td>
-                    <td className="py-3.5 px-5 text-right font-mono text-[#8a8c9e]">{row.maxCap}</td>
-                    <td className="py-3.5 px-5 text-right font-mono text-[#dcdce5]">{row.avgGiven}</td>
-                    <td className="py-3.5 px-5 text-right font-mono text-emerald-400 font-semibold">{row.compliance}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="bg-[#0e0f14] border border-[#1b1c26] rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-4 sm:p-5 border-b border-[#1a1b26] flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white tracking-tight">Revenue Mix: Hardware vs SaaS vs Services</h2>
-            <span className="text-xs text-[#727486]">Portfolio share</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#12131b] border-b border-[#1c1d27] text-[#787a8c] uppercase font-mono text-[10px] tracking-wider">
-                  <th className="py-3 px-5 font-semibold">Line Stream</th>
-                  <th className="py-3 px-5 font-semibold text-right">Revenue</th>
-                  <th className="py-3 px-5 font-semibold text-right">Share</th>
-                  <th className="py-3 px-5 font-semibold text-right">Orders</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#181923]">
-                {data.categoryBreakdown.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-[#13141d]">
-                    <td className="py-3.5 px-5 font-medium text-white">{row.name}</td>
-                    <td className="py-3.5 px-5 text-right font-mono font-bold text-white">{row.revenue}</td>
-                    <td className="py-3.5 px-5 text-right font-mono text-blue-400 font-semibold">{row.share}</td>
-                    <td className="py-3.5 px-5 text-right font-mono text-[#8a8c9e]">{row.orders}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Screen #15 Amber Helper Text Banner (Muted Dark Gold, No Neon Glow) */}
-      <div className="p-3 rounded-lg bg-[#14120c] border border-[#3d3215] text-xs text-[#c9b276] leading-relaxed flex items-center gap-2">
-        <span>Reports recalculate across quote-to-cash transactions automatically. Exported data includes timestamps and audit verification.</span>
       </div>
     </div>
   );

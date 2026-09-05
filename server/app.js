@@ -46,6 +46,8 @@ const fulfillmentRoutes = require('./routes/fulfillmentRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const dealHealthRoutes = require('./routes/dealHealthRoutes');
+const portalRoutes = require('./routes/portalRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 // Base API Routes
 app.use('/api', healthRoutes);
@@ -58,6 +60,8 @@ app.use('/api/billing', billingRoutes);
 app.use('/api', billingRoutes); // Exposes /api/subscriptions
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/deal-health', dealHealthRoutes);
+app.use('/api/portal', portalRoutes);
+app.use('/api/reports', reportRoutes);
 
 
 // Placeholder index route
