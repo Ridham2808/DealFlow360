@@ -5,6 +5,11 @@ import { WorkspaceProvider } from '../context/WorkspaceContext';
 export const metadata = {
   title: 'DealFlow360 — Intelligent Sales Operations Platform',
   description: 'Self-governing B2B quote-to-cash workflow, pricing governance, and customer portal',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({ children }) {

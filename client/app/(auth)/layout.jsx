@@ -20,15 +20,10 @@ export default function AuthLayout({ children }) {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#d4d4cf] flex items-center justify-center flex-shrink-0">
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="9" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="1" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="9" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" opacity="0.35" />
-            </svg>
+          <div className="w-10 h-10 rounded-xl bg-[#ededeb] flex items-center justify-center flex-shrink-0 shadow-sm p-1.5 overflow-hidden">
+            <img src="/logo.png" alt="DealFlow360 Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="text-[16px] font-semibold tracking-tight text-[#c8c8c2]">
+          <span className="text-[17px] font-semibold tracking-tight text-[#c8c8c2]">
             DealFlow<span className="text-[#555]">360</span>
           </span>
         </div>
@@ -97,15 +92,10 @@ export default function AuthLayout({ children }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2.5 px-6 pt-6 pb-0">
-          <div className="w-7 h-7 rounded-lg bg-[#d4d4cf] flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="9" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="1" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-              <rect x="9" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" opacity="0.35" />
-            </svg>
+          <div className="w-8 h-8 rounded-lg bg-[#ededeb] flex items-center justify-center p-1.5 overflow-hidden">
+            <img src="/logo.png" alt="DealFlow360 Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="text-[14px] font-semibold text-[#c8c8c2]">
+          <span className="text-[15px] font-semibold text-[#c8c8c2]">
             DealFlow<span className="text-[#555]">360</span>
           </span>
         </div>

@@ -106,13 +106,8 @@ export default function TopNav() {
         {/* Left: Brand Logo + Primary Nav */}
         <div className="flex items-center gap-3 xl:gap-5 min-w-0">
           <Link href="/dashboard" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#d4d4cf] flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105 shadow-sm">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="1" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-                <rect x="9" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-                <rect x="1" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" />
-                <rect x="9" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" opacity="0.35" />
-              </svg>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#ededeb] flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105 shadow-sm p-1.5 overflow-hidden">
+              <img src="/logo.png" alt="DealFlow360 Logo" className="w-full h-full object-contain" />
             </div>
             <span className="text-[15px] sm:text-[16px] font-bold tracking-tight text-[#d4d4cf] group-hover:text-white transition-colors">
               DealFlow<span className="text-[#666]">360</span>

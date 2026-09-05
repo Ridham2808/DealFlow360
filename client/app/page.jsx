@@ -24,11 +24,11 @@ export default function RootPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#09090b] text-zinc-400 font-mono text-xs">
-      <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white font-mono font-bold animate-pulse">
-        ⚡
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#080808] text-zinc-400 font-mono text-xs">
+      <div className="w-10 h-10 rounded-xl bg-[#ededeb] flex items-center justify-center p-1.5 animate-pulse shadow-sm overflow-hidden">
+        <img src="/logo.png" alt="DealFlow360 Logo" className="w-full h-full object-contain" />
       </div>
-      <p className="text-xs text-zinc-400 font-mono">Initializing DealFlow360 System...</p>
+      <p className="text-xs text-[#666] font-mono">Initializing DealFlow360 System...</p>
     </div>
   );
 }
