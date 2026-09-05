@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const productController = require('../controllers/productController');
 const priceListController = require('../controllers/priceListController');
+const discountController = require('../controllers/discountController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
 
@@ -51,5 +52,11 @@ router.delete('/pricelists/:id',                  requireAdmin,          (req, r
 router.post('/pricelists/:id/items',              requireAdmin,          (req, res, next) => priceListController.addItem(req, res, next));
 router.patch('/pricelists/:id/items/:itemId',      requireAdmin,          (req, res, next) => priceListController.updateItem(req, res, next));
 router.delete('/pricelists/:id/items/:itemId',     requireAdmin,          (req, res, next) => priceListController.deleteItem(req, res, next));
+
+// ── Discount Tiers & Category Ceilings ──────────────────────────────────
+router.get('/discount-tiers',                      requireAdminOrManager, (req, res, next) => discountController.listTiers(req, res, next));
+router.patch('/discount-tiers/:id',                 requireAdmin,          (req, res, next) => discountController.updateTier(req, res, next));
+router.get('/category-ceilings',                   requireAdminOrManager, (req, res, next) => discountController.listCeilings(req, res, next));
+router.patch('/category-ceilings/:id',              requireAdmin,          (req, res, next) => discountController.updateCeiling(req, res, next));
 
 module.exports = router;
