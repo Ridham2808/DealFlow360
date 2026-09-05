@@ -32,6 +32,7 @@ async function requireAuth(req, res, next) {
     // Attach verified user identity
     req.user = {
       id: user.id,
+      userId: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
