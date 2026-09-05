@@ -1,0 +1,62 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
+
+const requestIdMiddleware = require('./middleware/requestId');
+const errorHandler = require('./middleware/errorHandler');
+const healthRoutes = require('./routes/healthRoutes');
+const authRoutes = require('./routes/authRoutes');
+const { sendError } = require('./utils/apiResponse');
+
+const app = express();
+
+// Security Headers
+app.use(helmet());
+
+// Correlation / Request ID Middleware
+app.use(requestIdMiddleware);
+
+// Scoped CORS configuration with credentials enabled
+const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+app.use(cors({
+  origin: clientOrigin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID']
+}));
+
+// HTTP Logging with Morgan (format includes Request ID)
+morgan.token('req-id', (req) => req.id || '-');
+app.use(morgan(':req-id :method :url :status :res[content-length] - :response-time ms'));
+
+// Body Parsing & Cookie Parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Base API Routes
+app.use('/api', healthRoutes);
+app.use('/api/auth', authRoutes);
+
+// Placeholder index route
+app.get('/', (req, res) => {
+  res.json({
+    name: 'DealFlow360 API',
+    description: 'Intelligent, Self-Governing Sales Operations Platform',
+    version: '1.0.0',
+    docs: '/api/health'
+  });
+});
+
+// 404 Handler
+app.use((req, res) => {
+  return sendError(res, 404, 'NOT_FOUND', `Cannot ${req.method} ${req.originalUrl}`);
+});
+
+// Centralized Error Handler
+app.use(errorHandler);
+
+module.exports = app;
