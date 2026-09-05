@@ -16,7 +16,7 @@ export default function PortalLayout({ children }) {
         router.replace('/login');
       } else if (!isCustomer) {
         // Internal users accessing customer portal -> redirect to internal workspace
-        router.replace('/workspace/dashboard');
+        router.replace('/dashboard');
       }
     }
   }, [loading, isAuthenticated, isCustomer, router]);

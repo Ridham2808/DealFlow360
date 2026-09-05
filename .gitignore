@@ -37,3 +37,4 @@ docs/
 *.sln
 *.sw?
 Thumbs.db
+start_postgres.bat
