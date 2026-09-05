@@ -1,32 +1,51 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { 
   LogOut, 
   ChevronDown, 
-  Database, 
-  User as UserIcon,
-  Package,
-  Tags,
-  Sliders,
+  Package, 
+  Tags, 
+  Sliders, 
   Warehouse,
-  FileText,
-  CheckSquare,
-  Truck,
-  Repeat,
-  Receipt,
-  Activity,
-  BarChart3,
-  LayoutDashboard
+  ArrowRight
 } from 'lucide-react';
 
 export default function TopNav() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isProductOpen, setIsProductOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsProductOpen(false);
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setIsProductOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setIsProductOpen(false);
+  }, [pathname]);
 
   const navItems = [
     { label: 'Dashboard',     href: '/dashboard',     match: '/dashboard' },
@@ -37,29 +56,43 @@ export default function TopNav() {
     { label: 'Invoices',      href: '/invoices',      match: '/invoices' },
     { label: 'Deal Health',   href: '/deal-health',   match: '/deal-health' },
     { label: 'Reports',       href: '/reports',       match: '/reports' },
-    { label: 'Product',       href: '/admin/products', match: '/admin' },
   ];
 
-  const configSubItems = [
-    { label: 'Products & Variants',  href: '/admin/products',   icon: Package },
-    { label: 'Price Lists',          href: '/admin/pricelists', icon: Tags },
-    { label: 'Discounts & Ceilings', href: '/admin/discounts',  icon: Sliders },
-    { label: 'Warehouses & Stock',   href: '/admin/warehouses', icon: Warehouse },
+  const productSubItems = [
+    { 
+      label: 'Products & Variants',  
+      desc: 'SKU specifications, units & variants',
+      href: '/admin/products',   
+      icon: Package 
+    },
+    { 
+      label: 'Price Lists',          
+      desc: 'Tier-based custom item prices',
+      href: '/admin/pricelists', 
+      icon: Tags 
+    },
+    { 
+      label: 'Discounts & Ceilings', 
+      desc: 'Margin floors & approval escalation',
+      href: '/admin/discounts',  
+      icon: Sliders 
+    },
+    { 
+      label: 'Warehouses & Stock',   
+      desc: 'Depot inventory & threshold alerts',
+      href: '/admin/warehouses', 
+      icon: Warehouse 
+    },
   ];
 
-  const isItemActive = (item) => {
-    if (item.match === '/admin') {
-      return pathname.startsWith('/admin');
-    }
-    return pathname === item.href || pathname.startsWith(`${item.href}/`);
-  };
+  const isProductActive = pathname.startsWith('/admin');
 
   return (
-    <header className="w-full bg-[#080808] border-b border-[#18181b] sticky top-0 z-50">
+    <header className="w-full bg-[#080808] border-b border-[#18181b] sticky top-0 z-50 select-none">
       <div className="w-full px-4 lg:px-6 h-14 flex items-center justify-between gap-3">
-        {/* Left: Brand Logo */}
-        <div className="flex items-center gap-6 shrink-0">
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+        {/* Left: Brand Logo + Primary Nav */}
+        <div className="flex items-center gap-5 shrink-0">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group mr-2">
             <div className="w-7 h-7 rounded-lg bg-[#d4d4cf] flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <rect x="1" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
@@ -73,67 +106,17 @@ export default function TopNav() {
             </span>
           </Link>
 
-          {/* Center Navigation Pills - Exactly like User Wireframe */}
-          <nav className="hidden md:flex items-center gap-1.5 overflow-x-auto py-1">
+          {/* Center Navigation Pills - Faithful to User Wireframe */}
+          <nav className="hidden md:flex items-center gap-1.5 py-1">
             {navItems.map((item) => {
-              const active = isItemActive(item);
-
-              if (item.label === 'Product') {
-                return (
-                  <div key={item.label} className="relative">
-                    <button
-                      onClick={() => setIsConfigOpen(!isConfigOpen)}
-                      className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
-                        active
-                          ? 'bg-[#18181b] text-[#f4f4f5] border border-[#2e2e34] shadow-[0_1px_2px_rgba(0,0,0,0.4)]'
-                          : 'text-[#888891] hover:text-[#e4e4e7] hover:bg-[#121215] border border-transparent'
-                      }`}
-                    >
-                      <span>{item.label}</span>
-                      <ChevronDown className={`w-3 h-3 text-[#666] transition-transform ${isConfigOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {/* Dropdown Menu for Configuration */}
-                    {isConfigOpen && (
-                      <div 
-                        onMouseLeave={() => setIsConfigOpen(false)}
-                        className="absolute left-0 mt-1.5 w-52 bg-[#0e0e11] border border-[#222227] rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-top-1"
-                      >
-                        <div className="px-2.5 py-1 text-[10px] font-semibold text-[#555] uppercase tracking-wider">
-                          Admin Configuration
-                        </div>
-                        {configSubItems.map((sub) => {
-                          const SubIcon = sub.icon;
-                          const isSubActive = pathname === sub.href;
-                          return (
-                            <Link
-                              key={sub.href}
-                              href={sub.href}
-                              onClick={() => setIsConfigOpen(false)}
-                              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-colors ${
-                                isSubActive
-                                  ? 'bg-[#1c1c22] text-white font-medium'
-                                  : 'text-[#999] hover:text-[#e0e0e0] hover:bg-[#141418]'
-                              }`}
-                            >
-                              <SubIcon className="w-3.5 h-3.5 text-[#777]" />
-                              <span>{sub.label}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center transition-all ${
                     active
-                      ? 'bg-[#18181b] text-[#f4f4f5] border border-[#2e2e34] shadow-[0_1px_2px_rgba(0,0,0,0.4)]'
+                      ? 'bg-[#18181b] text-[#ededed] border border-[#2e2e34] shadow-[0_1px_2px_rgba(0,0,0,0.5)] font-semibold'
                       : 'text-[#888891] hover:text-[#e4e4e7] hover:bg-[#121215] border border-transparent'
                   }`}
                 >
@@ -141,6 +124,71 @@ export default function TopNav() {
                 </Link>
               );
             })}
+
+            {/* Product Dropdown Pill */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsProductOpen((prev) => !prev)}
+                className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isProductActive || isProductOpen
+                    ? 'bg-[#18181b] text-[#ededed] border border-[#2e2e34] shadow-[0_1px_2px_rgba(0,0,0,0.5)] font-semibold'
+                    : 'text-[#888891] hover:text-[#e4e4e7] hover:bg-[#121215] border border-transparent'
+                }`}
+              >
+                <span>Product</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#777] transition-transform duration-150 ${isProductOpen ? 'rotate-180 text-white' : ''}`} />
+              </button>
+
+              {/* Product Dropdown Menu */}
+              {isProductOpen && (
+                <div className="absolute left-0 mt-2 w-72 bg-[#0c0d11] border border-[#222228] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.8)] p-2 z-50 animate-in fade-in slide-in-from-top-1.5 duration-100">
+                  <div className="px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[#555] border-b border-[#18181f] mb-1">
+                    Catalog & Governance
+                  </div>
+
+                  <div className="space-y-0.5">
+                    {productSubItems.map((sub) => {
+                      const SubIcon = sub.icon;
+                      const isSubActive = pathname === sub.href;
+
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          onClick={() => setIsProductOpen(false)}
+                          className={`flex items-start gap-3 p-2.5 rounded-xl text-xs transition-all group ${
+                            isSubActive
+                              ? 'bg-[#181920] border border-[#282932] text-white'
+                              : 'text-[#9e9ea7] hover:bg-[#13141a] hover:text-white border border-transparent'
+                          }`}
+                        >
+                          <div className={`p-1.5 rounded-lg border mt-0.5 ${
+                            isSubActive
+                              ? 'bg-[#2563eb]/20 border-[#2563eb]/40 text-[#60a5fa]'
+                              : 'bg-[#14151b] border-[#1e1f26] text-[#71717a] group-hover:text-[#a1a1aa] group-hover:border-[#2a2b34]'
+                          }`}>
+                            <SubIcon className="w-4 h-4" />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-[13px] leading-tight flex items-center justify-between">
+                              <span className={isSubActive ? 'text-white' : 'text-[#ededed] group-hover:text-white'}>
+                                {sub.label}
+                              </span>
+                              <ArrowRight className="w-3 h-3 text-[#555] opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            <p className="text-[11px] text-[#555] group-hover:text-[#71717a] mt-0.5 leading-snug">
+                              {sub.desc}
+                            </p>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </nav>
         </div>
 
@@ -160,7 +208,7 @@ export default function TopNav() {
           {/* Divider */}
           <div className="h-4 w-[1px] bg-[#1c1c20]" />
 
-          {/* User Name */}
+          {/* User Profile */}
           <div className="flex items-center gap-2 text-xs">
             <div className="w-6 h-6 rounded-full bg-[#1a1a1f] border border-[#2c2c34] text-[#d4d4cf] flex items-center justify-center font-medium text-[10px]">
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
@@ -174,37 +222,12 @@ export default function TopNav() {
           <button
             onClick={logout}
             title="Sign Out"
-            className="p-1.5 text-[#666] hover:text-[#ef4444] hover:bg-[#191113] rounded-lg transition-colors"
+            className="p-1.5 text-[#666] hover:text-[#ef4444] hover:bg-[#191113] rounded-lg transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
-
-      {/* Sub-navigation bar when inside /admin/* configuration areas */}
-      {pathname.startsWith('/admin') && (
-        <div className="w-full bg-[#0c0c0e] border-t border-[#141416] px-4 lg:px-6 h-10 flex items-center gap-2 overflow-x-auto">
-          <span className="text-[10px] uppercase font-bold text-[#555] tracking-wider mr-2 shrink-0">
-            Catalog Config:
-          </span>
-          {configSubItems.map((sub) => {
-            const isSubActive = pathname === sub.href;
-            return (
-              <Link
-                key={sub.href}
-                href={sub.href}
-                className={`h-7 px-2.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 transition-all whitespace-nowrap ${
-                  isSubActive
-                    ? 'bg-[#18181b] text-[#f4f4f5] border border-[#2e2e34]'
-                    : 'text-[#777] hover:text-[#ccc] hover:bg-[#121214]'
-                }`}
-              >
-                <span>{sub.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
     </header>
   );
 }
