@@ -13,13 +13,16 @@ import {
   Warehouse,
   ArrowRight,
   Users,
-  Settings
+  Settings,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function TopNav() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [isProductOpen, setIsProductOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown on click outside
@@ -33,6 +36,7 @@ export default function TopNav() {
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
         setIsProductOpen(false);
+        setIsMobileMenuOpen(false);
       }
     }
 
@@ -44,9 +48,10 @@ export default function TopNav() {
     };
   }, []);
 
-  // Close dropdown on route change
+  // Close dropdown and mobile menu on route change
   useEffect(() => {
     setIsProductOpen(false);
+    setIsMobileMenuOpen(false);
   }, [pathname]);
 
   const navItems = [
@@ -96,33 +101,33 @@ export default function TopNav() {
   const isProductActive = pathname.startsWith('/admin');
 
   return (
-    <header className="w-full bg-[#080808] border-b border-[#18181b] sticky top-0 z-50 select-none">
-      <div className="w-full px-4 lg:px-6 h-14 flex items-center justify-between gap-3">
+    <header className="w-full bg-[#080808] border-b border-[#1c1d22] sticky top-0 z-50 select-none shadow-sm flex-shrink-0">
+      <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-5 lg:px-6 h-[70px] flex items-center justify-between gap-2">
         {/* Left: Brand Logo + Primary Nav */}
-        <div className="flex items-center gap-5 shrink-0">
-          <Link href="/dashboard" className="flex items-center gap-2.5 group mr-2">
-            <div className="w-7 h-7 rounded-lg bg-[#d4d4cf] flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <div className="flex items-center gap-3 xl:gap-5 min-w-0">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#d4d4cf] flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105 shadow-sm">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <rect x="1" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
                 <rect x="9" y="1" width="6" height="6" rx="1.2" fill="#0c0c0c" />
                 <rect x="1" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" />
                 <rect x="9" y="9" width="6" height="6" rx="1.2" fill="#0c0c0c" opacity="0.35" />
               </svg>
             </div>
-            <span className="text-[14px] font-semibold tracking-tight text-[#c8c8c2] group-hover:text-white transition-colors">
+            <span className="text-[15px] sm:text-[16px] font-bold tracking-tight text-[#d4d4cf] group-hover:text-white transition-colors">
               DealFlow<span className="text-[#666]">360</span>
             </span>
           </Link>
 
-          {/* Center Navigation Pills - Faithful to Linear UI Specification */}
-          <nav className="hidden md:flex items-center gap-1 py-1">
+          {/* Desktop Navigation Pills — Clean, Auto-fit without clipping */}
+          <nav className="hidden lg:flex items-center gap-1 shrink min-w-0">
             {navItems.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center transition-all ${
+                  className={`h-9 px-2.5 xl:px-3 rounded-lg text-xs xl:text-[13px] font-medium flex items-center whitespace-nowrap transition-all ${
                     active
                       ? 'bg-[#2563eb] text-white font-semibold shadow-sm'
                       : 'text-[#888891] hover:text-[#ededed] hover:bg-[#14151b] border border-transparent'
@@ -134,11 +139,11 @@ export default function TopNav() {
             })}
 
             {/* Product Dropdown Pill */}
-            <div className="relative" ref={dropdownRef}>
+            <div className="relative shrink-0" ref={dropdownRef}>
               <button
                 type="button"
                 onClick={() => setIsProductOpen((prev) => !prev)}
-                className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`h-9 px-2.5 xl:px-3 rounded-lg text-xs xl:text-[13px] font-medium flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                   isProductActive
                     ? 'bg-[#2563eb] text-white font-semibold shadow-sm'
                     : isProductOpen
@@ -152,7 +157,7 @@ export default function TopNav() {
 
               {/* Product Dropdown Menu */}
               {isProductOpen && (
-                <div className="absolute left-0 mt-2 w-72 bg-[#0c0d11] border border-[#222228] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.8)] p-2 z-50 animate-in fade-in slide-in-from-top-1.5 duration-100">
+                <div className="absolute left-0 mt-3 w-72 bg-[#0c0d11] border border-[#222228] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.8)] p-2 z-50 animate-in fade-in slide-in-from-top-1.5 duration-100">
                   <div className="px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[#555] border-b border-[#18181f] mb-1">
                     Catalog & Governance
                   </div>
@@ -203,21 +208,21 @@ export default function TopNav() {
         </div>
 
         {/* Right Section: Database Status, Role, User Profile, Logout */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 xl:gap-2.5 shrink-0">
           {/* Go to Back-end Button (Admin only) */}
           {user?.role === 'ADMIN' && (
             <Link
               href="/admin/users"
               title="Go to Back-end Configuration"
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#14151b] hover:bg-[#1a1b24] border border-[#22232a] hover:border-[#32333f] text-[#c4c4cc] hover:text-white text-xs font-medium transition-all"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#14151b] hover:bg-[#1a1b24] border border-[#22232a] hover:border-[#32333f] text-[#c4c4cc] hover:text-white text-xs font-medium transition-all"
             >
               <Settings className="w-3.5 h-3.5 text-[#888]" />
-              <span>Go to Back-end</span>
+              <span className="hidden sm:inline">Go to Back-end</span>
             </Link>
           )}
 
           {/* PostgreSQL Indicator */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0f1412] text-[#34d399] border border-[#16382a] text-[10px] font-mono">
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0f1412] text-[#34d399] border border-[#16382a] text-[10px] font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
             <span>PG 17</span>
           </div>
@@ -228,14 +233,14 @@ export default function TopNav() {
           </div>
 
           {/* Divider */}
-          <div className="h-4 w-[1px] bg-[#1c1c20]" />
+          <div className="h-4 w-[1px] bg-[#1c1c20] hidden sm:block" />
 
           {/* User Profile */}
           <div className="flex items-center gap-2 text-xs">
-            <div className="w-6 h-6 rounded-full bg-[#1a1a1f] border border-[#2c2c34] text-[#d4d4cf] flex items-center justify-center font-medium text-[10px]">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1a1a1f] border border-[#2c2c34] text-[#d4d4cf] flex items-center justify-center font-semibold text-xs shadow-sm">
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <span className="hidden xl:inline text-xs text-[#9e9ea7] font-medium max-w-[120px] truncate">
+            <span className="hidden 2xl:inline text-xs text-[#9e9ea7] font-medium max-w-[110px] truncate">
               {user?.name}
             </span>
           </div>
@@ -244,12 +249,75 @@ export default function TopNav() {
           <button
             onClick={logout}
             title="Sign Out"
-            className="p-1.5 text-[#666] hover:text-[#ef4444] hover:bg-[#191113] rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 text-[#666] hover:text-[#ef4444] hover:bg-[#191113] rounded-lg transition-colors cursor-pointer"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-4 h-4" />
+          </button>
+
+          {/* Mobile / Tablet Menu Button (< lg screens) */}
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className="p-1.5 rounded-lg border border-[#262838] bg-[#14151e] text-[#888] hover:text-white lg:hidden cursor-pointer"
+            title="Toggle Navigation Menu"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
+
+      {/* Mobile / Tablet Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t border-[#181924] bg-[#0c0d12] px-4 py-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-150 max-h-[80vh] overflow-y-auto">
+          <div className="text-[10px] font-mono uppercase text-[#666] tracking-wider px-2 py-1">
+            Navigation
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {navItems.map((item) => {
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`h-9 px-3 rounded-lg text-xs font-medium flex items-center transition-all ${
+                    active
+                      ? 'bg-[#2563eb] text-white font-semibold'
+                      : 'text-[#888891] hover:text-white hover:bg-[#14151b]'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="text-[10px] font-mono uppercase text-[#666] tracking-wider px-2 pt-2 border-t border-[#181924]">
+            Catalog & Admin Controls
+          </div>
+          <div className="space-y-1">
+            {productSubItems.map((sub) => {
+              const SubIcon = sub.icon;
+              const isSubActive = pathname === sub.href;
+              return (
+                <Link
+                  key={sub.href}
+                  href={sub.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${
+                    isSubActive
+                      ? 'bg-[#181922] text-white border border-[#2b2e40]'
+                      : 'text-[#888891] hover:text-white hover:bg-[#14151e]'
+                  }`}
+                >
+                  <SubIcon className="w-4 h-4 text-[#3b82f6]" />
+                  <span className="font-medium">{sub.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

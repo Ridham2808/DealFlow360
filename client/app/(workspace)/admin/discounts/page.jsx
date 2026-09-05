@@ -16,8 +16,8 @@ import {
   Lock,
   ChevronRight,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+import { api } from '../../../../lib/api';
+import { useAuth } from '../../../../context/AuthContext';
 
 export default function AdminDiscountsPage() {
   const { user } = useAuth();
@@ -284,9 +284,9 @@ export default function AdminDiscountsPage() {
           </div>
         )}
 
-        {/* ═══════════════ AMBER NOTIFICATION BANNER (MOCKUP-FAITHFUL) ═══════════════ */}
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-[#1c1508] border border-[#422e11] text-[#f59e0b] text-xs leading-relaxed">
-          <AlertTriangle className="w-4 h-4 shrink-0 text-[#f59e0b] mt-0.5" />
+        {/* ═══════════════ NOTIFICATION BANNER (CLEAN LINEAR DARK) ═══════════════ */}
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-[#111218] border border-[#21232e] text-[#9ca3af] text-xs leading-relaxed shadow-sm">
+          <ShieldCheck className="w-4 h-4 shrink-0 text-[#60a5fa] mt-0.5" />
           <p>
             Blended risk score evaluates deal margin, customer credit tier, and cumulative discount overages. Any
             discount exceeding tier or category ceilings triggers sequential approval chains recorded in immutable audit
@@ -332,7 +332,7 @@ export default function AdminDiscountsPage() {
                                 t.customerTier === 'PLATINUM'
                                   ? 'bg-[#181329] text-[#c084fc] border-[#381e5b]'
                                   : t.customerTier === 'GOLD'
-                                  ? 'bg-[#221c09] text-[#fbbf24] border-[#4b3e15]'
+                                  ? 'bg-[#181612] text-[#d6c7a1] border-[#362f22]'
                                   : t.customerTier === 'SILVER'
                                   ? 'bg-[#161a22] text-[#94a3b8] border-[#293548]'
                                   : 'bg-[#1e1511] text-[#fb923c] border-[#452718]'
@@ -346,7 +346,7 @@ export default function AdminDiscountsPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <div className="relative flex items-center">
+                          <div className="flex items-center rounded-lg bg-[#161822] border border-[#262838] focus-within:border-[#3b82f6] overflow-hidden">
                             <input
                               type="number"
                               step="0.5"
@@ -355,9 +355,9 @@ export default function AdminDiscountsPage() {
                               disabled={!isAdmin}
                               value={tierValues[t.id] ?? ''}
                               onChange={(e) => setTierValues({ ...tierValues, [t.id]: e.target.value })}
-                              className="w-20 px-2.5 py-1 text-xs bg-[#161822] border border-[#262838] rounded-lg text-white text-right font-mono focus:outline-none focus:border-[#3b82f6] disabled:opacity-60"
+                              className="w-16 px-2.5 py-1 text-xs bg-transparent text-white text-right font-mono focus:outline-none disabled:opacity-60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
-                            <span className="absolute right-7 pointer-events-none text-xs text-[#71717a] font-mono">
+                            <span className="px-2 py-1 bg-[#1a1c28] text-[11px] text-[#9ca3af] font-mono border-l border-[#262838] select-none">
                               %
                             </span>
                           </div>
@@ -410,10 +410,10 @@ export default function AdminDiscountsPage() {
                             <span
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                                 c.category === 'HARDWARE'
-                                  ? 'bg-[#092317] text-[#34d399] border-[#134e2c]'
-                                  : c.category === 'SERVICES'
-                                  ? 'bg-[#0f2137] text-[#60a5fa] border-[#1e3a5f]'
-                                  : 'bg-[#241334] text-[#c084fc] border-[#4c246f]'
+                                    ? 'bg-[#092317] text-[#34d399] border-[#134e2c]'
+                                    : c.category === 'SERVICES'
+                                    ? 'bg-[#0f2137] text-[#60a5fa] border-[#1e3a5f]'
+                                    : 'bg-[#241334] text-[#c084fc] border-[#4c246f]'
                               }`}
                             >
                               {c.category}
@@ -424,7 +424,7 @@ export default function AdminDiscountsPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <div className="relative flex items-center">
+                          <div className="flex items-center rounded-lg bg-[#161822] border border-[#262838] focus-within:border-[#3b82f6] overflow-hidden">
                             <input
                               type="number"
                               step="0.5"
@@ -433,9 +433,9 @@ export default function AdminDiscountsPage() {
                               disabled={!isAdmin}
                               value={ceilingValues[c.id] ?? ''}
                               onChange={(e) => setCeilingValues({ ...ceilingValues, [c.id]: e.target.value })}
-                              className="w-20 px-2.5 py-1 text-xs bg-[#161822] border border-[#262838] rounded-lg text-white text-right font-mono focus:outline-none focus:border-[#3b82f6] disabled:opacity-60"
+                              className="w-16 px-2.5 py-1 text-xs bg-transparent text-white text-right font-mono focus:outline-none disabled:opacity-60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
-                            <span className="absolute right-7 pointer-events-none text-xs text-[#71717a] font-mono">
+                            <span className="px-2 py-1 bg-[#1a1c28] text-[11px] text-[#9ca3af] font-mono border-l border-[#262838] select-none">
                               %
                             </span>
                           </div>
@@ -527,7 +527,7 @@ export default function AdminDiscountsPage() {
 
               {/* Approval Chain Rules Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {rules.map((r) => {
+                {rules.map((r, idx) => {
                   const rv = ruleValues[r.id] || {
                     minimumOverage: String(r.minimumOverage),
                     maximumOverage: String(r.maximumOverage),
@@ -543,9 +543,9 @@ export default function AdminDiscountsPage() {
                     >
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#71717a] flex items-center gap-1.5">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#a1a1aa] flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-[#a855f7]" />
-                            Step #{r.orderIndex}
+                            Step #{idx + 1}
                           </span>
 
                           <span
@@ -568,41 +568,51 @@ export default function AdminDiscountsPage() {
                           </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 pt-2">
+                        <div className="grid grid-cols-2 gap-2.5 pt-2">
                           <div>
-                            <label className="block text-[10px] text-[#888] mb-1">Min Overage (%)</label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              disabled={!isAdmin}
-                              value={rv.minimumOverage}
-                              onChange={(e) =>
-                                setRuleValues({
-                                  ...ruleValues,
-                                  [r.id]: { ...rv, minimumOverage: e.target.value },
-                                })
-                              }
-                              className="w-full px-2 py-1.5 rounded-lg bg-[#161824] border border-[#25283a] font-mono text-xs text-white focus:outline-none focus:border-[#3b82f6] disabled:opacity-60"
-                            />
+                            <label className="block text-[10px] font-medium text-[#888] mb-1">Min Overage</label>
+                            <div className="flex items-center rounded-lg bg-[#161824] border border-[#25283a] focus-within:border-[#3b82f6] overflow-hidden">
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                disabled={!isAdmin}
+                                value={rv.minimumOverage}
+                                onChange={(e) =>
+                                  setRuleValues({
+                                    ...ruleValues,
+                                    [r.id]: { ...rv, minimumOverage: e.target.value },
+                                  })
+                                }
+                                className="w-full px-2.5 py-1.5 bg-transparent font-mono text-xs text-white focus:outline-none disabled:opacity-60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <span className="px-2 py-1.5 bg-[#1b1e2c] text-[10px] text-[#71717a] font-mono border-l border-[#25283a] select-none">
+                                %
+                              </span>
+                            </div>
                           </div>
 
                           <div>
-                            <label className="block text-[10px] text-[#888] mb-1">Max Overage (%)</label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              disabled={!isAdmin}
-                              value={rv.maximumOverage}
-                              onChange={(e) =>
-                                setRuleValues({
-                                  ...ruleValues,
-                                  [r.id]: { ...rv, maximumOverage: e.target.value },
-                                })
-                              }
-                              className="w-full px-2 py-1.5 rounded-lg bg-[#161824] border border-[#25283a] font-mono text-xs text-white focus:outline-none focus:border-[#3b82f6] disabled:opacity-60"
-                            />
+                            <label className="block text-[10px] font-medium text-[#888] mb-1">Max Overage</label>
+                            <div className="flex items-center rounded-lg bg-[#161824] border border-[#25283a] focus-within:border-[#3b82f6] overflow-hidden">
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                disabled={!isAdmin}
+                                value={rv.maximumOverage}
+                                onChange={(e) =>
+                                  setRuleValues({
+                                    ...ruleValues,
+                                    [r.id]: { ...rv, maximumOverage: e.target.value },
+                                  })
+                                }
+                                className="w-full px-2.5 py-1.5 bg-transparent font-mono text-xs text-white focus:outline-none disabled:opacity-60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <span className="px-2 py-1.5 bg-[#1b1e2c] text-[10px] text-[#71717a] font-mono border-l border-[#25283a] select-none">
+                                %
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>

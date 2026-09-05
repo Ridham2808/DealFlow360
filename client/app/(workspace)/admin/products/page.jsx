@@ -75,9 +75,18 @@ export default function AdminProductsCatalogPage() {
         api.get('/admin/pricelists').catch(() => ({ data: { items: [] } })),
       ]);
 
-      setProducts(prodRes.data || []);
-      const plList = plRes.data?.items || plRes.data || [];
-      setPricelistsCount(Array.isArray(plList) ? plList.length : 3);
+      const rawItems = Array.isArray(prodRes?.data?.items)
+        ? prodRes.data.items
+        : Array.isArray(prodRes?.data)
+        ? prodRes.data
+        : [];
+      setProducts(rawItems);
+      const plList = Array.isArray(plRes?.data?.items)
+        ? plRes.data.items
+        : Array.isArray(plRes?.data)
+        ? plRes.data
+        : [];
+      setPricelistsCount(plList.length);
     } catch (err) {
       console.error('Failed to load catalog:', err);
       setErrorMsg(err.message || 'Failed to load product catalog. Please retry.');
@@ -98,8 +107,9 @@ export default function AdminProductsCatalogPage() {
   }, []);
 
   // Stats calculation
-  const totalProducts = products.length;
-  const totalVariants = products.reduce((acc, p) => acc + (p.variants?.length || 0), 0);
+  const productList = Array.isArray(products) ? products : [];
+  const totalProducts = productList.length;
+  const totalVariants = productList.reduce((acc, p) => acc + (p.variants?.length || 0), 0);
 
   // Handle Create Product
   const handleCreateProduct = async (e) => {
@@ -179,7 +189,7 @@ export default function AdminProductsCatalogPage() {
   };
 
   // Filter & Sort Logic
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = productList.filter((p) => {
     const matchesSearch = 
       p.name?.toLowerCase().includes(search.toLowerCase()) || 
       p.sku?.toLowerCase().includes(search.toLowerCase());
@@ -282,7 +292,7 @@ export default function AdminProductsCatalogPage() {
         <div className="bg-[#0c0d12] border border-[#1a1b22] rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[#71717a]">Pricelists</span>
-            <Tags className="w-4 h-4 text-[#fbbf24]" />
+            <Tags className="w-4 h-4 text-[#818cf8]" />
           </div>
           <div className="text-2xl font-bold text-white mt-1.5">{pricelistsCount}</div>
           <p className="text-[11px] text-[#555] mt-1">Customer tier rules</p>
@@ -298,10 +308,10 @@ export default function AdminProductsCatalogPage() {
         </div>
       </div>
 
-      {/* Amber Helper Banner */}
-      <div className="p-3.5 rounded-xl bg-[#1c1810] border border-[#3e321b] text-[#fbbf24] text-xs flex items-center gap-2.5">
-        <Info className="w-4 h-4 shrink-0 text-[#fbbf24]" />
-        <span>Click a product row to open general info, variants and taxonomy/price rules.</span>
+      {/* Clean Dark Helper Banner — No Glowing Yellow */}
+      <div className="p-3.5 rounded-xl bg-[#111218] border border-[#21232e] text-[#9ca3af] text-xs flex items-center gap-2.5 shadow-sm">
+        <Info className="w-4 h-4 shrink-0 text-[#60a5fa]" />
+        <span>Click a product row to open general info, variants, and custom price list rules.</span>
       </div>
 
       {/* Section Header & Controls */}
@@ -485,7 +495,7 @@ export default function AdminProductsCatalogPage() {
                             ? 'bg-[#151c27] border-[#20314a] text-[#60a5fa]'
                             : p.category === 'SUBSCRIPTION'
                             ? 'bg-[#1e1b2e] border-[#382d5c] text-[#a78bfa]'
-                            : 'bg-[#1f1910] border-[#3e2e17] text-[#fbbf24]'
+                            : 'bg-[#181a24] border-[#272b3c] text-[#94a3b8]'
                         }`}>
                           {p.category}
                         </span>
@@ -684,46 +694,61 @@ export default function AdminProductsCatalogPage() {
                   <label className="block text-[11px] font-semibold text-[#888] uppercase tracking-wider mb-1">
                     Base Price ($) <span className="text-[#f87171]">*</span>
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    placeholder="0.00"
-                    value={productForm.basePrice}
-                    onChange={(e) => setProductForm({ ...productForm, basePrice: e.target.value })}
-                    className="w-full h-8 px-3 rounded-lg bg-[#14151b] border border-[#24252f] text-xs text-white placeholder-[#555] focus:outline-none focus:border-[#404152] font-mono"
-                  />
+                  <div className="flex items-center h-8 rounded-lg bg-[#14151b] border border-[#24252f] focus-within:border-[#404152] overflow-hidden">
+                    <span className="px-2.5 h-full flex items-center bg-[#191b22] text-[#888] text-xs font-mono border-r border-[#24252f] select-none">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      placeholder="0.00"
+                      value={productForm.basePrice}
+                      onChange={(e) => setProductForm({ ...productForm, basePrice: e.target.value })}
+                      className="flex-1 h-full px-2.5 bg-transparent text-xs text-white placeholder-[#555] font-mono focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-[#888] uppercase tracking-wider mb-1">
                     Base Cost ($)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={productForm.baseCost}
-                    onChange={(e) => setProductForm({ ...productForm, baseCost: e.target.value })}
-                    className="w-full h-8 px-3 rounded-lg bg-[#14151b] border border-[#24252f] text-xs text-white placeholder-[#555] focus:outline-none focus:border-[#404152] font-mono"
-                  />
+                  <div className="flex items-center h-8 rounded-lg bg-[#14151b] border border-[#24252f] focus-within:border-[#404152] overflow-hidden">
+                    <span className="px-2.5 h-full flex items-center bg-[#191b22] text-[#888] text-xs font-mono border-r border-[#24252f] select-none">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={productForm.baseCost}
+                      onChange={(e) => setProductForm({ ...productForm, baseCost: e.target.value })}
+                      className="flex-1 h-full px-2.5 bg-transparent text-xs text-white placeholder-[#555] font-mono focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-[#888] uppercase tracking-wider mb-1">
                     Tax (%)
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="18"
-                    value={productForm.taxPercent}
-                    onChange={(e) => setProductForm({ ...productForm, taxPercent: e.target.value })}
-                    className="w-full h-8 px-3 rounded-lg bg-[#14151b] border border-[#24252f] text-xs text-white placeholder-[#555] focus:outline-none focus:border-[#404152] font-mono"
-                  />
+                  <div className="flex items-center h-8 rounded-lg bg-[#14151b] border border-[#24252f] focus-within:border-[#404152] overflow-hidden">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="18"
+                      value={productForm.taxPercent}
+                      onChange={(e) => setProductForm({ ...productForm, taxPercent: e.target.value })}
+                      className="flex-1 h-full px-2.5 bg-transparent text-xs text-white placeholder-[#555] font-mono focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="px-2.5 h-full flex items-center bg-[#191b22] text-[#888] text-xs font-mono border-l border-[#24252f] select-none">
+                      %
+                    </span>
+                  </div>
                 </div>
               </div>
 

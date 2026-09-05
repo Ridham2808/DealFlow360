@@ -8,6 +8,7 @@ import {
   Plus, 
   Layers, 
   AlertCircle,
+  AlertTriangle,
   ChevronDown,
   ChevronRight,
   CheckCircle2,
@@ -105,6 +106,14 @@ export default function AdminPriceListsPage() {
             <span>New Price List</span>
           </button>
         )}
+      </div>
+
+      {/* Clean Dark Helper Banner — No Glowing Yellow */}
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-[#111218] border border-[#21232e] text-[#9ca3af] text-xs leading-relaxed shadow-sm">
+        <Tags className="w-4 h-4 shrink-0 text-[#60a5fa] mt-0.5" />
+        <p>
+          Customer tier price lists dynamically override standard product catalog base prices. When a quotation line is generated, the pricing engine resolves tier-matched rates with priority over default catalog baselines.
+        </p>
       </div>
 
       {/* Notifications */}

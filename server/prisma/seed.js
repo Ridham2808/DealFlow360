@@ -290,8 +290,8 @@ async function main() {
   // 8. Seed Approval Chain Rules (No approval, manager approval, manager-then-finance approval)
   const approvalRules = [
     { id: 'rule-auto-approved', minimumOverage: 0.00, maximumOverage: 0.00, requiredRole: 'SALES_REP', orderIndex: 1 },
-    { id: 'rule-manager-required', minimumOverage: 0.01, maximumOverage: 10.00, requiredRole: 'SALES_MANAGER', orderIndex: 1 },
-    { id: 'rule-finance-escalation', minimumOverage: 10.01, maximumOverage: 100.00, requiredRole: 'FINANCE', orderIndex: 2 },
+    { id: 'rule-manager-required', minimumOverage: 0.01, maximumOverage: 10.00, requiredRole: 'SALES_MANAGER', orderIndex: 2 },
+    { id: 'rule-finance-escalation', minimumOverage: 10.01, maximumOverage: 100.00, requiredRole: 'FINANCE', orderIndex: 3 },
   ];
 
   for (const ar of approvalRules) {

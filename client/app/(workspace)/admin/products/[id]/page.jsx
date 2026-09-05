@@ -24,8 +24,9 @@ import {
   ShieldAlert,
   Building,
   CheckCircle2,
+  Info,
 } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api } from '../../../../../lib/api';
 
 const CATEGORIES = ['HARDWARE', 'SERVICES', 'SUBSCRIPTION'];
 const BILLING_CYCLES = ['MONTHLY', 'QUARTERLY', 'YEARLY'];
@@ -479,11 +480,11 @@ export default function ProductDetailPage({ params }) {
           </div>
         )}
 
-        {/* ═══════════════ AMBER NOTIFICATION BANNER (MOCKUP-FAITHFUL) ═══════════════ */}
-        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-[#1c1508] border border-[#422e11] text-[#f59e0b] text-xs">
-          <AlertTriangle className="w-4 h-4 shrink-0 text-[#f59e0b]" />
+        {/* ═══════════════ NOTIFICATION BANNER (CLEAN LINEAR DARK) ═══════════════ */}
+        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-[#111218] border border-[#21232e] text-[#9ca3af] text-xs">
+          <Info className="w-4 h-4 shrink-0 text-[#60a5fa]" />
           <p className="leading-relaxed font-normal">
-            Product details should be filled. Recurring order will all be involved at the beginning of the period.
+            Product details should be filled. Recurring orders will all be invoiced at the beginning of the period.
           </p>
         </div>
 
@@ -583,29 +584,39 @@ export default function ProductDetailPage({ params }) {
                     <label className="block text-[11px] font-medium text-[#a1a1aa] mb-1.5">
                       Base Price ($) <span className="text-red-400">*</span>
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      value={form.basePrice}
-                      onChange={(e) => setForm({ ...form, basePrice: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg bg-[#14151e] border border-[#262838] font-mono text-white focus:outline-none focus:border-[#3b82f6] transition-colors"
-                    />
+                    <div className="flex items-center rounded-lg bg-[#14151e] border border-[#262838] focus-within:border-[#3b82f6] overflow-hidden">
+                      <span className="px-3 py-2 bg-[#181a24] text-xs font-mono text-[#888] border-r border-[#262838] select-none">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        required
+                        value={form.basePrice}
+                        onChange={(e) => setForm({ ...form, basePrice: e.target.value })}
+                        className="w-full px-3 py-2 bg-transparent font-mono text-white text-xs focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-medium text-[#a1a1aa] mb-1.5">
                       Base Cost ($) <span className="text-[#555] font-normal">(Internal)</span>
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={form.baseCost}
-                      onChange={(e) => setForm({ ...form, baseCost: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg bg-[#14151e] border border-[#262838] font-mono text-white focus:outline-none focus:border-[#3b82f6] transition-colors"
-                    />
+                    <div className="flex items-center rounded-lg bg-[#14151e] border border-[#262838] focus-within:border-[#3b82f6] overflow-hidden">
+                      <span className="px-3 py-2 bg-[#181a24] text-xs font-mono text-[#888] border-r border-[#262838] select-none">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={form.baseCost}
+                        onChange={(e) => setForm({ ...form, baseCost: e.target.value })}
+                        className="w-full px-3 py-2 bg-transparent font-mono text-white text-xs focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -614,15 +625,20 @@ export default function ProductDetailPage({ params }) {
                     <label className="block text-[11px] font-medium text-[#a1a1aa] mb-1.5">
                       Tax Rate (%) <span className="text-red-400">*</span>
                     </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="100"
-                      value={form.taxPercent}
-                      onChange={(e) => setForm({ ...form, taxPercent: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg bg-[#14151e] border border-[#262838] font-mono text-white focus:outline-none focus:border-[#3b82f6] transition-colors"
-                    />
+                    <div className="flex items-center rounded-lg bg-[#14151e] border border-[#262838] focus-within:border-[#3b82f6] overflow-hidden">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={form.taxPercent}
+                        onChange={(e) => setForm({ ...form, taxPercent: e.target.value })}
+                        className="w-full px-3 py-2 bg-transparent font-mono text-white text-xs focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="px-3 py-2 bg-[#181a24] text-xs font-mono text-[#888] border-l border-[#262838] select-none">
+                        %
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -804,19 +820,24 @@ export default function ProductDetailPage({ params }) {
                 <div>
                   <label className="block text-[10px] text-[#888] mb-1">Price Delta ($)</label>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={variantForm.extraPrice}
-                      onChange={(e) => setVariantForm({ ...variantForm, extraPrice: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[#181a24] border border-[#2b2e42] font-mono text-white focus:outline-none focus:border-[#3b82f6]"
-                    />
+                    <div className="flex items-center rounded-lg bg-[#181a24] border border-[#2b2e42] focus-within:border-[#3b82f6] overflow-hidden flex-1">
+                      <span className="px-2.5 py-1.5 bg-[#1f2230] text-xs font-mono text-[#888] border-r border-[#2b2e42] select-none">
+                        +$
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={variantForm.extraPrice}
+                        onChange={(e) => setVariantForm({ ...variantForm, extraPrice: e.target.value })}
+                        className="w-full px-2.5 py-1.5 bg-transparent font-mono text-white text-xs focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
                     <button
                       type="submit"
                       disabled={variantActionLoading === 'new'}
-                      className="h-8 px-3 rounded-lg bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-medium text-xs whitespace-nowrap disabled:opacity-50"
+                      className="h-8 px-3 rounded-lg bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-medium text-xs whitespace-nowrap disabled:opacity-50 cursor-pointer"
                     >
                       {variantActionLoading === 'new' ? 'Saving...' : 'Add'}
                     </button>
@@ -907,19 +928,26 @@ export default function ProductDetailPage({ params }) {
 
                         <td className="py-2.5 px-4 text-right font-mono text-white">
                           {isEditing ? (
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={editData.extraPrice}
-                              onChange={(e) =>
-                                setEditingVariantForm({
-                                  ...editingVariantForm,
-                                  [v.id]: { ...editData, extraPrice: e.target.value },
-                                })
-                              }
-                              className="w-24 px-2 py-1 rounded bg-[#161822] border border-[#2b2e40] font-mono text-xs text-white text-right"
-                            />
+                            <div className="flex items-center justify-end">
+                              <div className="flex items-center rounded bg-[#161822] border border-[#2b2e40] focus-within:border-[#3b82f6] overflow-hidden">
+                                <span className="px-1.5 py-1 bg-[#1c1e2b] text-[10px] font-mono text-[#71717a] border-r border-[#2b2e40] select-none">
+                                  +$
+                                </span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={editData.extraPrice}
+                                  onChange={(e) =>
+                                    setEditingVariantForm({
+                                      ...editingVariantForm,
+                                      [v.id]: { ...editData, extraPrice: e.target.value },
+                                    })
+                                  }
+                                  className="w-20 px-1.5 py-1 bg-transparent font-mono text-xs text-white text-right focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                              </div>
+                            </div>
                           ) : (
                             `+$${parseFloat(String(v.extraPrice || 0)).toFixed(2)}`
                           )}
@@ -1045,7 +1073,7 @@ export default function ProductDetailPage({ params }) {
                               pl.customerTier === 'PLATINUM'
                                 ? 'bg-[#181329] text-[#c084fc] border-[#381e5b]'
                                 : pl.customerTier === 'GOLD'
-                                ? 'bg-[#221c09] text-[#fbbf24] border-[#4b3e15]'
+                                ? 'bg-[#181612] text-[#d6c7a1] border-[#362f22]'
                                 : pl.customerTier === 'SILVER'
                                 ? 'bg-[#161a22] text-[#94a3b8] border-[#293548]'
                                 : 'bg-[#1e1511] text-[#fb923c] border-[#452718]'
@@ -1058,19 +1086,24 @@ export default function ProductDetailPage({ params }) {
                         <td className="py-2.5 px-4 font-mono text-[#9ca3af]">{pl.currency || 'USD'}</td>
 
                         <td className="py-2.5 px-4">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={row.unitPrice}
-                            onChange={(e) =>
-                              setPriceListRowStates({
-                                ...priceListRowStates,
-                                [pl.id]: { ...row, unitPrice: e.target.value },
-                              })
-                            }
-                            className="w-28 px-2 py-1 rounded bg-[#161822] border border-[#2b2e40] font-mono text-xs text-white focus:outline-none focus:border-[#3b82f6]"
-                          />
+                          <div className="flex items-center w-32 rounded bg-[#161822] border border-[#2b2e40] focus-within:border-[#3b82f6] overflow-hidden">
+                            <span className="px-2 py-1 bg-[#1c1e2b] text-[11px] font-mono text-[#71717a] border-r border-[#2b2e40] select-none">
+                              $
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={row.unitPrice}
+                              onChange={(e) =>
+                                setPriceListRowStates({
+                                  ...priceListRowStates,
+                                  [pl.id]: { ...row, unitPrice: e.target.value },
+                                })
+                              }
+                              className="w-full px-2 py-1 bg-transparent font-mono text-xs text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                          </div>
                         </td>
 
                         <td className="py-2.5 px-4">
