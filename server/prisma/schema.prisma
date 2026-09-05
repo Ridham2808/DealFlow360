@@ -21,6 +21,17 @@ enum Role {
   CUSTOMER
 }
 
+enum UserStatus {
+  INVITATION_PENDING
+  ACTIVE
+  DEACTIVATED
+}
+
+enum InvitationType {
+  INTERNAL_USER
+  CUSTOMER_PORTAL
+}
+
 enum CustomerTier {
   BRONZE
   SILVER
@@ -73,24 +84,27 @@ model User {
   id           String        @id @default(uuid())
   name         String
   email        String        @unique
-  passwordHash String
+  passwordHash String?
   role         Role          @default(SALES_REP)
+  status       UserStatus    @default(INVITATION_PENDING)
   customerTier CustomerTier? // nullable for customer users
-  
+
   customerId   String?
   customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  
+
   isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   // Relations
-  ownedQuotations Quotation[]    @relation("QuotationOwner")
-  approvalSteps   ApprovalStep[]
-  auditLogs       AuditLog[]
+  ownedQuotations      Quotation[]    @relation("QuotationOwner")
+  approvalSteps        ApprovalStep[]
+  auditLogsAsActor     AuditLog[]     @relation("AuditActor")
+  invitationsCreated   Invitation[]   @relation("InvitedBy")
 
   @@index([email])
   @@index([role])
+  @@index([status])
   @@index([createdAt])
 }
 
@@ -106,9 +120,61 @@ model Customer {
 
   users        User[]
   quotations   Quotation[]
+  invitations  Invitation[]
 
   @@index([email])
   @@index([tier])
+  @@index([createdAt])
+}
+
+// -------------------------------------------------------------
+// INVITATIONS
+// -------------------------------------------------------------
+
+model Invitation {
+  id           String         @id @default(uuid())
+  email        String
+  role         Role
+  type         InvitationType
+  tokenHash    String         @unique   // SHA-256 hash of raw token
+  invitedById  String
+  invitedBy    User           @relation("InvitedBy", fields: [invitedById], references: [id])
+  customerId   String?
+  customer     Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  isUsed       Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+
+  @@index([email])
+  @@index([tokenHash])
+  @@index([isUsed])
+  @@index([expiresAt])
+}
+
+// -------------------------------------------------------------
+// AUDIT LOG
+// -------------------------------------------------------------
+
+model AuditLog {
+  id           String     @id @default(uuid())
+  actorId      String
+  actor        User       @relation("AuditActor", fields: [actorId], references: [id])
+  action       String     // CREATED_USER, DEACTIVATED_USER, CHANGED_ROLE, ACCEPTED_INVITATION, etc.
+  targetId     String?    // uuid of affected record
+  targetType   String?    // User, Customer, Invitation, Quotation
+  quotationId  String?
+  quotation    Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  reasonNote   String?
+  beforeStatus String?
+  afterStatus  String?
+  meta         Json?
+  createdAt    DateTime   @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetId])
+  @@index([quotationId])
   @@index([createdAt])
 }
 
@@ -370,23 +436,7 @@ model ApprovalStep {
   @@index([status])
 }
 
-model AuditLog {
-  id           String     @id @default(uuid())
-  quotationId  String?
-  quotation    Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
-  userId       String?
-  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action       String
-  reasonNote   String?
-  beforeStatus String?
-  afterStatus  String?
-  metadata     Json?
-  timestamp    DateTime   @default(now())
 
-  @@index([quotationId])
-  @@index([userId])
-  @@index([timestamp])
-}
 
 model FulfillmentSplit {
   id                String    @id @default(uuid())

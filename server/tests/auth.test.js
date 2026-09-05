@@ -116,22 +116,20 @@ describe('DealFlow360 Authentication & Security Test Suite', () => {
     });
   });
 
-  describe('4. Duplicate Signup Prevention', () => {
-    it('should reject signup with 409 if email already exists', async () => {
-      userRepository.findByEmail.mockResolvedValue(mockInternalUser);
-
+  describe('4. Public Signup Disabled Enforcement', () => {
+    it('should reject direct signup attempts with 403 PUBLIC_SIGNUP_DISABLED', async () => {
       const res = await request(app)
         .post('/api/auth/signup')
         .send({
-          name: 'Elena Clone',
-          email: 'rep@dealflow360.com',
+          name: 'Unauthorized User',
+          email: 'random@dealflow360.com',
           password: 'Password123!',
           role: 'SALES_REP',
         });
 
-      expect(res.statusCode).toBe(409);
+      expect(res.statusCode).toBe(403);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('EMAIL_EXISTS');
+      expect(res.body.error.code).toBe('PUBLIC_SIGNUP_DISABLED');
     });
   });
 

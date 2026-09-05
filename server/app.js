@@ -37,9 +37,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const adminRoutes = require('./routes/adminRoutes');
+
 // Base API Routes
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Placeholder index route
 app.get('/', (req, res) => {
