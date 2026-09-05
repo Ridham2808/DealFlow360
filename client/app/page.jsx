@@ -24,9 +24,12 @@ export default function RootPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50">
-      <Spinner size="lg" />
-      <p className="text-xs text-slate-500 font-medium">Initializing DealFlow360...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#09090b] text-zinc-400 font-mono text-xs">
+      <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white font-mono font-bold animate-pulse">
+        ⚡
+      </div>
+      <p className="text-xs text-zinc-400 font-mono">Initializing DealFlow360 System...</p>
     </div>
   );
 }
+
