@@ -6,6 +6,7 @@ const priceListController = require('../controllers/priceListController');
 const discountController = require('../controllers/discountController');
 const approvalRuleController = require('../controllers/approvalRuleController');
 const warehouseController = require('../controllers/warehouseController');
+const pricingController = require('../controllers/pricingController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
 
@@ -65,6 +66,9 @@ router.patch('/category-ceilings/:id',              requireAdmin,          (req,
 // ── Approval Chain Rules ────────────────────────────────────────────────
 router.get('/approval-chain-rules',                requireAdminOrManager, (req, res, next) => approvalRuleController.listRules(req, res, next));
 router.patch('/approval-chain-rules/:id',           requireAdmin,          (req, res, next) => approvalRuleController.updateRule(req, res, next));
+
+// ── Pricing Resolution ──────────────────────────────────────────────────
+router.post('/pricing/resolve',                    requireAdminOrManager, (req, res, next) => pricingController.resolvePrice(req, res, next));
 
 // ── Warehouses & Stock Levels ───────────────────────────────────────────
 router.get('/warehouses',                          requireAdminOrManager, (req, res, next) => warehouseController.listWarehouses(req, res, next));
