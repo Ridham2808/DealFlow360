@@ -11,7 +11,9 @@ import {
   Tags, 
   Sliders, 
   Warehouse,
-  ArrowRight
+  ArrowRight,
+  Users,
+  Settings
 } from 'lucide-react';
 
 export default function TopNav() {
@@ -59,6 +61,12 @@ export default function TopNav() {
   ];
 
   const productSubItems = [
+    { 
+      label: 'Users & Customers',  
+      desc: 'Team members, roles & portal access',
+      href: '/admin/users',   
+      icon: Users 
+    },
     { 
       label: 'Products & Variants',  
       desc: 'SKU specifications, units & variants',
@@ -193,7 +201,19 @@ export default function TopNav() {
         </div>
 
         {/* Right Section: Database Status, Role, User Profile, Logout */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Go to Back-end Button (Admin only) */}
+          {user?.role === 'ADMIN' && (
+            <Link
+              href="/admin/users"
+              title="Go to Back-end Configuration"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#14151b] hover:bg-[#1a1b24] border border-[#22232a] hover:border-[#32333f] text-[#c4c4cc] hover:text-white text-xs font-medium transition-all"
+            >
+              <Settings className="w-3.5 h-3.5 text-[#888]" />
+              <span>Go to Back-end</span>
+            </Link>
+          )}
+
           {/* PostgreSQL Indicator */}
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0f1412] text-[#34d399] border border-[#16382a] text-[10px] font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />

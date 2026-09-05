@@ -19,6 +19,7 @@ const requireAdminOrManager = requireRole(['ADMIN', 'SALES_MANAGER']);
 // ── Internal Users (ADMIN only) ─────────────────────────────────────────
 router.get('/users',                      requireAdmin, (req, res, next) => adminController.listUsers(req, res, next));
 router.post('/users',                     requireAdmin, (req, res, next) => adminController.createUser(req, res, next));
+router.patch('/users/:id',                requireAdmin, (req, res, next) => adminController.editUser(req, res, next));
 router.post('/users/:id/deactivate',      requireAdmin, (req, res, next) => adminController.deactivateUser(req, res, next));
 router.post('/users/:id/reactivate',      requireAdmin, (req, res, next) => adminController.reactivateUser(req, res, next));
 router.post('/users/:id/change-role',     requireAdmin, (req, res, next) => adminController.changeRole(req, res, next));
