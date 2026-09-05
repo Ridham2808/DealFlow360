@@ -24,7 +24,8 @@ export function QuotationProvider({ children }) {
     try {
       const res = await api.get(`/quotations/${id}`);
       if (res && res.data) {
-        setQuotation(res.data);
+        const quoteObj = res.data.quotation ? { ...res.data.quotation, riskEvaluation: res.data.riskEvaluation } : res.data;
+        setQuotation(quoteObj);
       }
 
       // Fetch upsell suggestions in parallel
@@ -59,7 +60,8 @@ export function QuotationProvider({ children }) {
 
         const res = await api.patch(`/quotations/${quotation.id}/lines`, payload);
         if (res && res.data) {
-          setQuotation(res.data);
+          const updatedQuote = res.data.quotation ? { ...res.data.quotation, riskResult: res.data.riskResult } : res.data;
+          setQuotation(updatedQuote);
 
           // Refresh suggestions after line mutation
           try {
@@ -71,7 +73,7 @@ export function QuotationProvider({ children }) {
             // non-blocking
           }
 
-          return res.data;
+          return updatedQuote;
         }
       } catch (err) {
         if (err.status === 409 || err.code === 'STALE_VERSION_ERROR') {
@@ -102,7 +104,8 @@ export function QuotationProvider({ children }) {
           `/quotations/${quotation.id}/lines/${lineId}?version=${quotation.version}`
         );
         if (res && res.data) {
-          setQuotation(res.data);
+          const updatedQuote = res.data.quotation ? { ...res.data.quotation, riskResult: res.data.riskResult } : res.data;
+          setQuotation(updatedQuote);
 
           // Refresh upsells
           try {
@@ -113,7 +116,7 @@ export function QuotationProvider({ children }) {
           } catch {
             // non-blocking
           }
-          return res.data;
+          return updatedQuote;
         }
       } catch (err) {
         if (err.status === 409 || err.code === 'STALE_VERSION_ERROR') {
@@ -143,8 +146,9 @@ export function QuotationProvider({ children }) {
         version: quotation.version,
       });
       if (res && res.data) {
-        setQuotation(res.data);
-        return res.data;
+        const updatedQuote = res.data.quotation ? res.data.quotation : res.data;
+        setQuotation(updatedQuote);
+        return updatedQuote;
       }
     } catch (err) {
       if (err.status === 409 || err.code === 'STALE_VERSION_ERROR') {

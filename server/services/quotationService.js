@@ -352,7 +352,7 @@ class QuotationService {
     );
 
     return {
-      quotation: quote,
+      ...quote,
       riskEvaluation,
     };
   }
