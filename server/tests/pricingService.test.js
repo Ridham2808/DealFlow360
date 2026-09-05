@@ -151,6 +151,88 @@ describe('Pricing Service & Validation Engine', () => {
     });
   });
 
+  describe('Product Soft-Delete & Dependency Protection', () => {
+    let stockDepotProduct;
+    let warehouse;
+    let stockLevel;
+
+    beforeAll(async () => {
+      // Create warehouse
+      warehouse = await prisma.warehouse.create({
+        data: {
+          name: 'Test Depo Center',
+          location: 'Phoenix, AZ',
+          shippingCostWeight: 1.0,
+          isActive: true,
+        },
+      });
+
+      // Create product with stock
+      stockDepotProduct = await prisma.product.create({
+        data: {
+          name: 'Stock Dependent Hardware',
+          sku: `STK-DEP-${Date.now()}`,
+          category: 'HARDWARE',
+          basePrice: 500.00,
+          baseCost: 350.00,
+          unit: 'UNIT',
+          isActive: true,
+        },
+      });
+
+      // Create stock on hand
+      stockLevel = await prisma.stockLevel.create({
+        data: {
+          warehouseId: warehouse.id,
+          productId: stockDepotProduct.id,
+          quantityOnHand: 25,
+          reserved: 5,
+          replenishmentThreshold: 10,
+        },
+      });
+    });
+
+    afterAll(async () => {
+      if (stockLevel) {
+        await prisma.stockLevel.deleteMany({ where: { productId: stockDepotProduct.id } }).catch(() => {});
+      }
+      if (stockDepotProduct) {
+        await prisma.product.delete({ where: { id: stockDepotProduct.id } }).catch(() => {});
+      }
+      if (warehouse) {
+        await prisma.warehouse.delete({ where: { id: warehouse.id } }).catch(() => {});
+      }
+    });
+
+    it('blocks deletion of product with active warehouse stock (409 Conflict)', async () => {
+      const res = await request(app)
+        .delete(`/api/admin/products/${stockDepotProduct.id}`)
+        .set('Cookie', `dealflow_token=${adminToken}`);
+
+      expect(res.status).toBe(409);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('PRODUCT_HAS_STOCK_DEPENDENCY');
+    });
+
+    it('allows soft deletion once active inventory stock is zero', async () => {
+      // Zero out stock
+      await prisma.stockLevel.update({
+        where: { id: stockLevel.id },
+        data: { quantityOnHand: 0, reserved: 0 },
+      });
+
+      const res = await request(app)
+        .delete(`/api/admin/products/${stockDepotProduct.id}`)
+        .set('Cookie', `dealflow_token=${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      const dbCheck = await prisma.product.findUnique({ where: { id: stockDepotProduct.id } });
+      expect(dbCheck.isActive).toBe(false);
+    });
+  });
+
   describe('POST /api/admin/pricing/resolve Endpoint', () => {
     it('resolves price via API with valid authentication', async () => {
       const res = await request(app)

@@ -1,4 +1,5 @@
 const productRepository = require('../repositories/productRepository');
+const prisma = require('../prisma/prisma');
 const auditService = require('./auditService');
 const { ApiError } = require('../utils/apiResponse');
 
