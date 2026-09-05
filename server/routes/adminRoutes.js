@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const productController = require('../controllers/productController');
+const priceListController = require('../controllers/priceListController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
 
@@ -40,5 +41,15 @@ router.get('/products/:id/variants',                       requireAdminOrManager
 router.post('/products/:id/variants',                      requireAdmin,          (req, res, next) => productController.createVariant(req, res, next));
 router.patch('/products/:id/variants/:variantId',          requireAdmin,          (req, res, next) => productController.updateVariant(req, res, next));
 router.delete('/products/:id/variants/:variantId',         requireAdmin,          (req, res, next) => productController.deleteVariant(req, res, next));
+
+// ── Price Lists & Items ─────────────────────────────────────────────────
+router.get('/pricelists',                         requireAdminOrManager, (req, res, next) => priceListController.listPriceLists(req, res, next));
+router.post('/pricelists',                        requireAdmin,          (req, res, next) => priceListController.createPriceList(req, res, next));
+router.get('/pricelists/:id',                     requireAdminOrManager, (req, res, next) => priceListController.getPriceList(req, res, next));
+router.patch('/pricelists/:id',                    requireAdmin,          (req, res, next) => priceListController.updatePriceList(req, res, next));
+router.delete('/pricelists/:id',                  requireAdmin,          (req, res, next) => priceListController.deletePriceList(req, res, next));
+router.post('/pricelists/:id/items',              requireAdmin,          (req, res, next) => priceListController.addItem(req, res, next));
+router.patch('/pricelists/:id/items/:itemId',      requireAdmin,          (req, res, next) => priceListController.updateItem(req, res, next));
+router.delete('/pricelists/:id/items/:itemId',     requireAdmin,          (req, res, next) => priceListController.deleteItem(req, res, next));
 
 module.exports = router;
