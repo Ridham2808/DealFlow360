@@ -38,11 +38,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const adminRoutes = require('./routes/adminRoutes');
+const approvalRoutes = require('./routes/approvalRoutes');
 
 // Base API Routes
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', approvalRoutes);
 
 // Placeholder index route
 app.get('/', (req, res) => {
