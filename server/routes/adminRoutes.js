@@ -7,6 +7,8 @@ const discountController = require('../controllers/discountController');
 const approvalRuleController = require('../controllers/approvalRuleController');
 const warehouseController = require('../controllers/warehouseController');
 const pricingController = require('../controllers/pricingController');
+const subscriptionPlanController = require('../controllers/subscriptionPlanController');
+const upsellRuleController = require('../controllers/upsellRuleController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
 
@@ -78,5 +80,18 @@ router.get('/warehouses/:id',                      requireAdminOrManager, (req, 
 router.patch('/warehouses/:id',                     requireAdmin,          (req, res, next) => warehouseController.updateWarehouse(req, res, next));
 router.get('/warehouses/:id/stock',                requireAdminOrManager, (req, res, next) => warehouseController.getStock(req, res, next));
 router.patch('/warehouses/:id/stock/:productId',    requireAdmin,          (req, res, next) => warehouseController.updateStock(req, res, next));
+
+// ── Subscription Plans (ADMIN only) ─────────────────────────────────────
+router.get('/subscription-plans',                  requireAdminOrManager, (req, res, next) => subscriptionPlanController.listPlans(req, res, next));
+router.get('/subscription-plans/:id',              requireAdminOrManager, (req, res, next) => subscriptionPlanController.getPlanById(req, res, next));
+router.post('/subscription-plans',                 requireAdmin,          (req, res, next) => subscriptionPlanController.createPlan(req, res, next));
+router.patch('/subscription-plans/:id',            requireAdmin,          (req, res, next) => subscriptionPlanController.updatePlan(req, res, next));
+router.delete('/subscription-plans/:id',           requireAdmin,          (req, res, next) => subscriptionPlanController.deletePlan(req, res, next));
+
+// ── Upsell & Cross-Sell Rules (ADMIN only) ──────────────────────────────
+router.get('/upsell-rules',                        requireAdminOrManager, (req, res, next) => upsellRuleController.listRules(req, res, next));
+router.post('/upsell-rules',                       requireAdmin,          (req, res, next) => upsellRuleController.createRule(req, res, next));
+router.patch('/upsell-rules/:id',                  requireAdmin,          (req, res, next) => upsellRuleController.updateRule(req, res, next));
+router.delete('/upsell-rules/:id',                 requireAdmin,          (req, res, next) => upsellRuleController.deleteRule(req, res, next));
 
 module.exports = router;

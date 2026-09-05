@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { Spinner } from '../../components/ui';
 import TopNav from '../../components/navigation/TopNav';
+import { QuotationProvider } from '../../context/QuotationContext';
 
 export default function WorkspaceLayout({ children }) {
   const { loading, isAuthenticated, isInternal } = useAuth();
@@ -35,14 +36,16 @@ export default function WorkspaceLayout({ children }) {
   }
 
   return (
-    <div className="h-screen bg-[#080808] text-[#c8c8c2] flex flex-col overflow-hidden font-sans selection:bg-[#262626] selection:text-white">
-      {/* Top Navbar — Pinned at top, does not scroll */}
-      <TopNav />
+    <QuotationProvider>
+      <div className="h-screen bg-[#080808] text-[#c8c8c2] flex flex-col overflow-hidden font-sans selection:bg-[#262626] selection:text-white">
+        {/* Top Navbar — Pinned at top, does not scroll */}
+        <TopNav />
 
-      {/* Main Screen Content — Independently scrollable */}
-      <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 overflow-y-auto">
-        {children}
-      </main>
-    </div>
+        {/* Main Screen Content — Independently scrollable */}
+        <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </QuotationProvider>
   );
 }
