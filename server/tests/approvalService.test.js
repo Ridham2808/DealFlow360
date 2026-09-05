@@ -431,5 +431,77 @@ describe('Approval Service & Workflow Hardening Integration Suite', () => {
       expect(res.body.data.approvalSteps).toHaveLength(1);
       expect(res.body.data.auditTimeline.length).toBeGreaterThan(0);
     });
+
+    it('GET /api/approvals returns list supporting pendingOnly, search, and pagination', async () => {
+      const res = await request(app)
+        .get('/api/approvals?pendingOnly=true&limit=10')
+        .set('Authorization', `Bearer ${managerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.items)).toBe(true);
+      expect(res.body.data.pagination).toBeDefined();
+    });
+
+    it('GET /api/approvals/:id returns Screen #6 details with whyFlagged, stepper, and allowedActions', async () => {
+      // First submit apiQuote
+      await request(app)
+        .post(`/api/quotations/${apiQuote.id}/submit`)
+        .set('Authorization', `Bearer ${repToken}`)
+        .send();
+
+      const res = await request(app)
+        .get(`/api/approvals/${apiQuote.id}`)
+        .set('Authorization', `Bearer ${managerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.quotation).toBeDefined();
+      expect(res.body.data.customer).toBeDefined();
+      expect(res.body.data.whyFlagged).toBeDefined();
+      expect(Array.isArray(res.body.data.whyFlagged)).toBe(true);
+      if (res.body.data.whyFlagged.length > 0) {
+        const flag = res.body.data.whyFlagged[0];
+        expect(flag).toHaveProperty('line');
+        expect(flag).toHaveProperty('discountGiven');
+        expect(flag).toHaveProperty('limitAllowed');
+        expect(flag).toHaveProperty('overBy');
+      }
+      expect(res.body.data.stepper).toHaveLength(4);
+      expect(res.body.data.stepper.map((s) => s.node)).toEqual([
+        'SUBMITTED',
+        'SALES_MANAGER',
+        'FINANCE',
+        'CONFIRMED',
+      ]);
+      expect(res.body.data.allowedActions).toBeDefined();
+      expect(res.body.data.allowedActions.canApprove).toBe(true);
+    });
+
+    it('POST /api/approvals/:stepId/action actions step via direct /api/approvals route', async () => {
+      await request(app)
+        .post(`/api/quotations/${apiQuote.id}/submit`)
+        .set('Authorization', `Bearer ${repToken}`)
+        .send();
+
+      const quote = await prisma.quotation.findUnique({
+        where: { id: apiQuote.id },
+        include: { approvalSteps: true },
+      });
+      const pendingStep = quote.approvalSteps.find((s) => s.status === 'PENDING');
+
+
+      const res = await request(app)
+        .post(`/api/approvals/${pendingStep.id}/action`)
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({
+          action: 'APPROVED',
+          notes: 'Manager approves via /api/approvals/:stepId/action',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.step.status).toBe('APPROVED');
+    });
   });
 });
+

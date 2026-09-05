@@ -337,6 +337,71 @@ class QuotationService {
     }
 
     // Run live blended risk calculation to provide evaluation details
+    // Resolve price list for customer tier and currency
+    const priceList = await prisma.priceList.findFirst({
+      where: {
+        customerTier: quote.customer?.tier || 'BRONZE',
+        currency: quote.currency || 'USD',
+        isActive: true,
+      },
+      select: { id: true, name: true, customerTier: true, currency: true, pricingRule: true },
+    }) || {
+      id: 'default-pricelist',
+      name: `Standard ${quote.customer?.tier || 'BRONZE'} Tier Pricelist (${quote.currency || 'USD'})`,
+      customerTier: quote.customer?.tier || 'BRONZE',
+      currency: quote.currency || 'USD',
+      pricingRule: 'Authoritative Base Catalog Pricing',
+    };
+
+    // Enrich lines with itemType, billingType, and warehouse stockStatus
+    const enrichedLines = await Promise.all(
+      quote.lines.map(async (line) => {
+        const cat = (line.categorySnapshot || line.product?.category || '').toLowerCase();
+        let itemType = 'PHYSICAL_PRODUCT';
+        let billingType = 'One-Time';
+
+        if (cat === 'services' || line.product?.unit === 'HOURS') {
+          itemType = 'SERVICE';
+          billingType = 'One-Time (Service)';
+        } else if (cat === 'warranty' || (line.product?.name || '').toLowerCase().includes('warranty')) {
+          itemType = 'WARRANTY';
+          billingType = 'Coverage';
+        } else if (line.isRecurring || cat === 'subscriptions' || line.subscriptionPlanId) {
+          itemType = 'SUBSCRIPTION';
+          billingType = 'Recurring';
+        }
+
+        let stockStatus = null;
+        let availableStock = null;
+
+        if (itemType === 'PHYSICAL_PRODUCT') {
+          const stockLevels = await prisma.stockLevel.findMany({
+            where: { productId: line.productId },
+            select: { quantityOnHand: true, reserved: true },
+          });
+          availableStock = stockLevels.reduce(
+            (acc, s) => acc + Math.max(0, s.quantityOnHand - s.reserved),
+            0
+          );
+          if (line.quantity <= availableStock) {
+            stockStatus = 'IN_STOCK';
+          } else if (availableStock > 0) {
+            stockStatus = 'PARTIALLY_AVAILABLE';
+          } else {
+            stockStatus = 'BACKORDER_REQUIRED';
+          }
+        }
+
+        return {
+          ...line,
+          itemType,
+          billingType,
+          stockStatus,
+          availableStock,
+        };
+      })
+    );
+
     const [discountTiers, categoryCeilings] = await Promise.all([
       prisma.discountTier.findMany({ where: { isActive: true } }),
       prisma.categoryDiscountCeiling.findMany({ where: { isActive: true } }),
@@ -352,7 +417,9 @@ class QuotationService {
     );
 
     return {
-      quotation: quote,
+      ...quote,
+      lines: enrichedLines,
+      priceList,
       riskEvaluation,
     };
   }
@@ -498,6 +565,26 @@ class QuotationService {
         const product = await tx.product.findUnique({ where: { id: productId } });
         if (!product || !product.isActive) {
           throw new ApiError('Product is not active or available in catalog.', 404, 'PRODUCT_NOT_FOUND');
+        }
+
+        // Validate Warranty: Must be linked to a physical product covered in the quotation
+        const isWarranty = product.category === 'Warranty' || product.name.toLowerCase().includes('warranty');
+        if (isWarranty) {
+          const existingPhysicalLines = await tx.quotationLine.findMany({
+            where: { quotationId },
+            include: { product: true },
+          });
+          const hasPhysical = existingPhysicalLines.some((l) => {
+            const c = (l.categorySnapshot || l.product?.category || '').toLowerCase();
+            return c === 'hardware' || (!['services', 'warranty', 'subscriptions'].includes(c) && !l.isRecurring);
+          });
+          if (!hasPhysical) {
+            throw new ApiError(
+              'A warranty must be linked to a physical product or product category covered in this quotation.',
+              400,
+              'UNLINKED_WARRANTY'
+            );
+          }
         }
 
         // Resolve unit price

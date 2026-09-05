@@ -66,6 +66,23 @@ async function request(endpoint, options = {}) {
   }
 }
 
+export async function apiRequest(endpoint, options = {}) {
+  let token = null;
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('token');
+  }
+  const headers = { ...options.headers };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await request(endpoint, {
+    ...options,
+    headers,
+  });
+  return res && res.data !== undefined ? res.data : res;
+}
+
 export const api = {
   get: (endpoint, options) => request(endpoint, { ...options, method: 'GET' }),
   post: (endpoint, body, options) => request(endpoint, { ...options, method: 'POST', body }),
@@ -74,5 +91,6 @@ export const api = {
   delete: (endpoint, options) => request(endpoint, { ...options, method: 'DELETE' }),
 };
 
-export { ApiClientError };
+export { ApiClientError, request };
 export default api;
+

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import ProfileModal from '../profile/ProfileModal';
 import { 
   LogOut, 
   ChevronDown, 
@@ -15,11 +16,13 @@ import {
   Users,
   Settings,
   Menu,
-  X
+  X,
+  User
 } from 'lucide-react';
 
 export default function TopNav() {
   const { user, logout } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
   const [isProductOpen, setIsProductOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -69,7 +72,44 @@ export default function TopNav() {
       match: '/quotations',
       roles: ['ADMIN', 'SALES_MANAGER', 'SALES_REP', 'FINANCE'] 
     },
+    { 
+      label: 'Approvals',    
+      href: '/approvals',    
+      match: '/approvals',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
+    { 
+      label: 'Fulfillment',    
+      href: '/fulfillment',    
+      match: '/fulfillment',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE'] 
+    },
+    { 
+      label: 'Subscriptions',    
+      href: '/subscriptions',    
+      match: '/subscriptions',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
+    { 
+      label: 'Invoices',    
+      href: '/invoices',    
+      match: '/invoices',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
+    { 
+      label: 'Deal Health',    
+      href: '/deal-health',    
+      match: '/deal-health',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
+    { 
+      label: 'Reports',    
+      href: '/reports',    
+      match: '/reports',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
   ];
+
 
   const ALL_PRODUCT_SUB_ITEMS = [
     { 
@@ -252,15 +292,20 @@ export default function TopNav() {
           {/* Divider */}
           <div className="h-4 w-[1px] bg-[#1c1c20] hidden sm:block" />
 
-          {/* User Profile */}
-          <div className="flex items-center gap-2 text-xs">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1a1a1f] border border-[#2c2c34] text-[#d4d4cf] flex items-center justify-center font-semibold text-xs shadow-sm">
+          {/* User Profile — opens ProfileModal */}
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            title="View & edit your profile"
+            className="flex items-center gap-2 text-xs px-2 py-1 rounded-lg hover:bg-[#14151b] border border-transparent hover:border-[#22232a] transition-all cursor-pointer group"
+          >
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1a1a1f] border border-[#2c2c34] text-[#d4d4cf] group-hover:border-blue-500/50 flex items-center justify-center font-semibold text-xs shadow-sm transition-colors">
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <span className="hidden 2xl:inline text-xs text-[#9e9ea7] font-medium max-w-[110px] truncate">
+            <span className="hidden 2xl:inline text-xs text-[#9e9ea7] group-hover:text-white font-medium max-w-[110px] truncate transition-colors">
               {user?.name}
             </span>
-          </div>
+          </button>
 
           {/* Sign Out Button */}
           <button
@@ -270,6 +315,9 @@ export default function TopNav() {
           >
             <LogOut className="w-4 h-4" />
           </button>
+
+          {/* Profile Modal */}
+          <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
 
           {/* Mobile / Tablet Menu Button (< lg screens) */}
           <button

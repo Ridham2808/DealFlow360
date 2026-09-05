@@ -1,10 +1,43 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AuthLayout({ children }) {
+  const { user, loading, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      if (user.role === 'CUSTOMER') {
+        router.replace('/portal');
+      } else {
+        router.replace('/dashboard');
+      }
+    }
+  }, [loading, isAuthenticated, user, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#080808]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#ededeb] flex items-center justify-center p-1.5 animate-pulse shadow-sm overflow-hidden">
+            <img src="/logo.png" alt="DealFlow360 Logo" className="w-full h-full object-contain" />
+          </div>
+          <span className="text-xs text-[#666] font-mono">Loading session...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return null; // Don't flash login form while redirecting
+  }
+
   return (
     <div className="h-screen w-full bg-[#080808] flex overflow-hidden">
+
 
       {/* ── LEFT PANEL — branding ── */}
       <div className="hidden lg:flex lg:w-[52%] xl:w-[54%] flex-col justify-between p-14 border-r border-[#131313] relative overflow-hidden flex-shrink-0">

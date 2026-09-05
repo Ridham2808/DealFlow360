@@ -163,6 +163,35 @@ class AuthService {
     return this._safeUser(user);
   }
 
+  /**
+   * Update profile for authenticated user (e.g. name).
+   */
+  async updateProfile(userId, { name }) {
+    if (!name || !name.trim()) {
+      throw new ApiError('Name is required.', 400, 'INVALID_NAME');
+    }
+    const user = await userRepository.findById(userId);
+    if (!user || !user.isActive) {
+      throw new ApiError('User not found or deactivated.', 404, 'USER_NOT_FOUND');
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { name: name.trim() },
+      include: { customer: true },
+    });
+
+    auditService.log({
+      actorId: userId,
+      action: 'UPDATED_PROFILE',
+      targetId: userId,
+      targetType: 'User',
+      reasonNote: `User updated profile name to "${name.trim()}"`,
+    });
+
+    return this._safeUser(updated);
+  }
+
   _safeUser(user) {
     return {
       id:          user.id,

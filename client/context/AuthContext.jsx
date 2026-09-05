@@ -103,6 +103,20 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Update Profile handler
+  const updateProfile = async (payload) => {
+    try {
+      const res = await api.patch('/auth/profile', payload);
+      const updatedUser = res?.data?.user;
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+      return { success: true, user: updatedUser };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -110,6 +124,7 @@ export function AuthProvider({ children }) {
     login,
     signup,
     logout,
+    updateProfile,
     refreshUser: loadUser,
     isAuthenticated: !!user,
     isInternal: user && user.role !== 'CUSTOMER',

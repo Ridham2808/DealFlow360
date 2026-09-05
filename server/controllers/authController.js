@@ -41,6 +41,16 @@ class AuthController {
     }
   }
 
+  async updateProfile(req, res, next) {
+    try {
+      const { name } = req.body;
+      const user = await authService.updateProfile(req.user.userId, { name });
+      return res.status(200).json(success({ user }, 'Profile updated successfully'));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   /**
    * POST /api/auth/signup  — PERMANENTLY DISABLED
    * Public role-based signup is not allowed in DealFlow360.

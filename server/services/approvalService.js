@@ -324,26 +324,22 @@ class ApprovalService {
         },
       });
 
+      const nextStep = updatedQuote.approvalSteps.find((s) => s.status === 'PENDING') || null;
+
       return {
         step: updatedStep,
         quotation: updatedQuote,
+        nextStep,
       };
     });
   }
 
   /**
    * Transition quotation lifecycle states (APPROVED -> UNDER_NEGOTIATION, etc.)
-   *
-   * @param {Object} params
-   * @param {string} params.quotationId
-   * @param {string} params.targetStatus
-   * @param {string} [params.reason]
-   * @param {Object} params.actorUser
-   * @param {number} [params.expectedVersion]
    */
   async transitionQuotation({ quotationId, targetStatus, reason, actorUser, expectedVersion }) {
     const allowedTransitions = {
-      APPROVED: ['UNDER_NEGOTIATION', 'SENT_TO_CUSTOMER'],
+      APPROVED: ['UNDER_NEGOTIATION', 'SENT_TO_CUSTOMER', 'CONFIRMED'],
       UNDER_NEGOTIATION: ['CONFIRMED', 'PENDING_APPROVAL', 'DRAFT'],
       CONFIRMED: ['CONVERTED_TO_ORDER'],
       RETURNED: ['DRAFT', 'PENDING_APPROVAL'],
@@ -407,6 +403,269 @@ class ApprovalService {
 
       return updatedQuote;
     });
+  }
+
+  /**
+   * List quotations for approval workflow with filtering and pagination.
+   */
+  async listApprovals({ status, pendingOnly, ownerId, riskLevel, search, page = 1, limit = 20 }) {
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const where = {};
+
+    if (pendingOnly === 'true' || pendingOnly === true) {
+      where.status = 'PENDING_APPROVAL';
+    } else if (status) {
+      where.status = status;
+    } else {
+      where.status = {
+        in: ['PENDING_APPROVAL', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'RETURNED', 'CONFIRMED'],
+      };
+    }
+
+    if (ownerId) {
+      where.ownerRepId = ownerId;
+    }
+
+    if (riskLevel) {
+      where.riskLevel = riskLevel;
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { quoteNumber: { contains: q, mode: 'insensitive' } },
+        { customer: { name: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [total, items] = await Promise.all([
+      prisma.quotation.count({ where }),
+      prisma.quotation.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          customer: {
+            select: { id: true, name: true, tier: true, email: true },
+          },
+          ownerRep: {
+            select: { id: true, name: true, email: true, role: true },
+          },
+          approvalSteps: {
+            orderBy: { stepOrder: 'asc' },
+            include: {
+              assignedUser: {
+                select: { id: true, name: true, email: true, role: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const formatted = items.map((q) => {
+      const pendingStep = q.approvalSteps.find((s) => s.status === 'PENDING') || null;
+      return {
+        id: q.id,
+        quoteNumber: q.quoteNumber,
+        status: q.status,
+        version: q.version,
+        blendedRiskScore: q.blendedRiskScore,
+        riskLevel: q.riskLevel,
+        grandTotal: Number(q.grandTotal),
+        marginPercentage: Number(q.marginPercentage),
+        createdAt: q.createdAt,
+        updatedAt: q.updatedAt,
+        customer: q.customer,
+        ownerRep: q.ownerRep,
+        pendingStep,
+        totalSteps: q.approvalSteps.length,
+        approvedSteps: q.approvalSteps.filter((s) => s.status === 'APPROVED').length,
+      };
+    });
+
+    return {
+      items: formatted,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      },
+    };
+  }
+
+  /**
+   * Get rich approval detail for a quotation matching Mockup Screen #6.
+   */
+  async getApprovalDetail(quotationId, currentUser = {}) {
+    // Lookup by ID or quoteNumber
+    const quote = await prisma.quotation.findFirst({
+      where: {
+        OR: [{ id: quotationId }, { quoteNumber: quotationId }],
+      },
+      include: {
+        customer: true,
+        ownerRep: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+        lines: {
+          include: {
+            product: true,
+          },
+          orderBy: { id: 'asc' },
+        },
+        approvalSteps: {
+          orderBy: { stepOrder: 'asc' },
+          include: {
+            assignedUser: {
+              select: { id: true, name: true, email: true, role: true },
+            },
+          },
+        },
+        auditLogs: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            actor: {
+              select: { id: true, name: true, email: true, role: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!quote) {
+      throw new ApiError('Quotation not found.', 404, 'QUOTATION_NOT_FOUND');
+    }
+
+    // Identify active pending step
+    const activeStep = quote.approvalSteps.find((s) => s.status === 'PENDING') || null;
+
+    // Calculate Why This Quote Was Flagged table items
+    // Columns: Line, Discount Given, Limit Allowed, Over By
+    const flaggedLines = quote.lines
+      .filter((line) => Number(line.discountPercent) > Number(line.lineDiscountLimit))
+      .map((line) => {
+        const discountGiven = Number(line.discountPercent);
+        const limitAllowed = Number(line.lineDiscountLimit);
+        const overBy = Number((discountGiven - limitAllowed).toFixed(2));
+        return {
+          lineId: line.id,
+          line: line.productNameSnapshot || line.product?.name || 'Item',
+          category: line.categorySnapshot || line.product?.category || 'Hardware',
+          discountGiven,
+          limitAllowed,
+          overBy,
+        };
+      });
+
+    // Four-node stepper: Submitted -> Sales Manager -> Finance -> Confirmed
+    const salesManagerStep = quote.approvalSteps.find((s) => s.requiredRole === 'SALES_MANAGER');
+    const financeStep = quote.approvalSteps.find((s) => s.requiredRole === 'FINANCE');
+
+    const stepper = [
+      {
+        node: 'SUBMITTED',
+        label: 'Submitted',
+        status: quote.status !== 'DRAFT' ? 'COMPLETED' : 'PENDING',
+        actionedAt: quote.createdAt,
+        user: quote.ownerRep?.name || 'Sales Rep',
+      },
+      {
+        node: 'SALES_MANAGER',
+        label: 'Sales Manager',
+        status: salesManagerStep ? salesManagerStep.status : (quote.status === 'APPROVED' || quote.status === 'CONFIRMED' ? 'SKIPPED' : 'PENDING'),
+        actionedAt: salesManagerStep?.actionedAt || null,
+        user: salesManagerStep?.assignedUser?.name || null,
+        requiredRole: 'SALES_MANAGER',
+      },
+      {
+        node: 'FINANCE',
+        label: 'Finance',
+        status: financeStep ? financeStep.status : (quote.status === 'APPROVED' || quote.status === 'CONFIRMED' ? 'SKIPPED' : 'PENDING'),
+        actionedAt: financeStep?.actionedAt || null,
+        user: financeStep?.assignedUser?.name || null,
+        requiredRole: 'FINANCE',
+      },
+      {
+        node: 'CONFIRMED',
+        label: 'Confirmed',
+        status: ['CONFIRMED', 'CONVERTED_TO_ORDER'].includes(quote.status)
+          ? 'COMPLETED'
+          : quote.status === 'APPROVED'
+          ? 'READY'
+          : 'PENDING',
+        actionedAt: null,
+      },
+    ];
+
+    // Allowed actions for current user
+    let canApprove = false;
+    let canReject = false;
+    let canReturn = false;
+    const isOwner = quote.ownerRepId === currentUser.id;
+
+    if (activeStep) {
+      if (currentUser.role === 'ADMIN') {
+        canApprove = true;
+        canReject = true;
+        canReturn = true;
+      } else if (currentUser.role === activeStep.requiredRole && !isOwner) {
+        canApprove = true;
+        canReject = true;
+        canReturn = true;
+      }
+    }
+
+    // Audit Table: User, Action, Date, Note
+    const auditTable = quote.auditLogs.map((log) => ({
+      id: log.id,
+      user: log.actor?.name || 'System',
+      userEmail: log.actor?.email,
+      role: log.actor?.role,
+      action: log.action,
+      date: log.createdAt,
+      note: log.reasonNote || '-',
+    }));
+
+    return {
+      quotation: {
+        id: quote.id,
+        quoteNumber: quote.quoteNumber,
+        status: quote.status,
+        version: quote.version,
+        blendedRiskScore: quote.blendedRiskScore,
+        riskLevel: quote.riskLevel,
+        grandTotal: Number(quote.grandTotal),
+        marginPercentage: Number(quote.marginPercentage),
+        createdAt: quote.createdAt,
+        updatedAt: quote.updatedAt,
+      },
+      customer: {
+        id: quote.customer?.id,
+        name: quote.customer?.name,
+        tier: quote.customer?.tier,
+        email: quote.customer?.email,
+      },
+      ownerRep: quote.ownerRep,
+      whyFlagged: flaggedLines,
+      stepper,
+      approvalSteps: quote.approvalSteps,
+      activeStep,
+      auditTable,
+      allowedActions: {
+        canApprove,
+        canReject,
+        canReturn,
+        activeStepId: activeStep?.id || null,
+        requiredRole: activeStep?.requiredRole || null,
+        isOwner,
+      },
+    };
   }
 
   /**
@@ -499,3 +758,4 @@ class ApprovalService {
 }
 
 module.exports = new ApprovalService();
+

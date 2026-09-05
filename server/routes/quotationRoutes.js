@@ -46,13 +46,57 @@ router.get('/lookup/customers', async (req, res, next) => {
 router.get('/lookup/products', async (req, res, next) => {
   try {
     const prisma = require('../prisma/prisma');
-    const products = await prisma.product.findMany({
+    const rawProducts = await prisma.product.findMany({
       where: { isActive: true },
       include: {
         variants: { where: { isActive: true } },
+        stockLevels: true,
       },
       orderBy: { name: 'asc' },
     });
+
+    const products = rawProducts.map((p) => {
+      const cat = (p.category || '').toLowerCase();
+      let itemType = 'PHYSICAL_PRODUCT';
+      let billingType = 'One-Time';
+
+      if (cat === 'services' || p.unit === 'HOURS') {
+        itemType = 'SERVICE';
+        billingType = 'One-Time (Service)';
+      } else if (cat === 'warranty' || p.name.toLowerCase().includes('warranty')) {
+        itemType = 'WARRANTY';
+        billingType = 'Coverage';
+      } else if (p.isRecurringEligible || cat === 'subscriptions') {
+        itemType = 'SUBSCRIPTION';
+        billingType = 'Recurring';
+      }
+
+      let availableStock = null;
+      let stockStatus = null;
+
+      if (itemType === 'PHYSICAL_PRODUCT') {
+        availableStock = (p.stockLevels || []).reduce(
+          (acc, s) => acc + Math.max(0, s.quantityOnHand - s.reserved),
+          0
+        );
+        if (availableStock > 10) {
+          stockStatus = 'IN_STOCK';
+        } else if (availableStock > 0) {
+          stockStatus = 'PARTIALLY_AVAILABLE';
+        } else {
+          stockStatus = 'OUT_OF_STOCK';
+        }
+      }
+
+      return {
+        ...p,
+        itemType,
+        billingType,
+        availableStock,
+        stockStatus,
+      };
+    });
+
     const { success } = require('../utils/apiResponse');
     return res.status(200).json(success(products));
   } catch (err) {

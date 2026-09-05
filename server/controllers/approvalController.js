@@ -46,6 +46,25 @@ class ApprovalController {
     }
   }
 
+  async listApprovals(req, res, next) {
+    try {
+      const result = await approvalService.listApprovals(req.query);
+      return res.status(200).json(success(result));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getApprovalDetail(req, res, next) {
+    try {
+      const { id } = req.params;
+      const result = await approvalService.getApprovalDetail(id, req.user);
+      return res.status(200).json(success(result));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getApprovalStatus(req, res, next) {
     try {
       const { id } = req.params;
@@ -58,3 +77,4 @@ class ApprovalController {
 }
 
 module.exports = new ApprovalController();
+
