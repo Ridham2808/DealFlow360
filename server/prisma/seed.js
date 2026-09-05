@@ -78,6 +78,7 @@ async function main() {
       update: {
         name: u.name,
         role: u.role,
+        status: 'ACTIVE',
         passwordHash,
         customerTier: u.customerTier || null,
         customerId: u.customerId || null,
@@ -88,6 +89,7 @@ async function main() {
         email: u.email,
         passwordHash,
         role: u.role,
+        status: 'ACTIVE',
         customerTier: u.customerTier || null,
         customerId: u.customerId || null,
         isActive: true,

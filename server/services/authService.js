@@ -1,21 +1,24 @@
 const bcrypt = require('bcryptjs');
+const prisma = require('../prisma/prisma');
 const userRepository = require('../repositories/userRepository');
+const invitationService = require('./invitationService');
+const auditService = require('./auditService');
 const { generateToken } = require('../utils/tokenHelper');
 const { ApiError } = require('../utils/apiResponse');
 
 class AuthService {
   /**
-   * Register a new user
+   * PUBLIC SIGNUP IS DISABLED.
+   * All user creation goes through Admin dashboard.
+   * This method is kept only for seed script use (internal calls).
+   * @internal
    */
-  async register({ name, email, password, role = 'SALES_REP', companyName, customerTier = 'BRONZE' }) {
+  async _seedCreateUser({ name, email, password, role = 'SALES_REP', companyName, customerTier = 'BRONZE' }) {
     const cleanEmail = email.toLowerCase().trim();
     const existing = await userRepository.findByEmail(cleanEmail);
-    if (existing) {
-      throw new ApiError('An account with this email address already exists.', 409, 'EMAIL_EXISTS', { email: cleanEmail });
-    }
+    if (existing) return existing; // idempotent for seed
 
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(password, 10);
 
     let customerId = null;
     let assignedTier = null;
@@ -30,96 +33,146 @@ class AuthService {
       customerId = customer.id;
     }
 
-    const user = await userRepository.create({
+    return userRepository.create({
       name,
-      email: cleanEmail,
+      email:        cleanEmail,
       passwordHash,
       role,
+      status:       'ACTIVE',
       customerTier: assignedTier,
       customerId,
-      isActive: true,
+      isActive:     true,
     });
-
-    // Issue signed JWT containing only minimum identity claims
-    const token = generateToken({
-      userId: user.id,
-      role: user.role,
-      customerId: user.customerId,
-    });
-
-    const safeUser = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      customerTier: user.customerTier,
-      customerId: user.customerId,
-      customer: user.customer,
-      createdAt: user.createdAt,
-    };
-
-    return { user: safeUser, token };
   }
 
   /**
-   * Authenticate user with email and password.
-   * Security Rule: Invalid credentials must not reveal whether an email exists.
+   * Accept an invitation — set password, activate user, issue JWT.
+   * This is the ONLY way a new user can gain access.
+   *
+   * @param {string} rawToken   - token from invitation link/email
+   * @param {string} password   - chosen password (min 8 chars)
+   * @param {string} [name]     - optional display name override
+   */
+  async acceptInvitation({ rawToken, password, name }) {
+    // 1. Validate token (throws on expired/used/not found)
+    const invitation = await invitationService.validate(rawToken);
+
+    // 2. Find the pending user
+    const user = await prisma.user.findUnique({ where: { email: invitation.email } });
+    if (!user) throw new ApiError('User record not found. Contact administrator.', 404, 'USER_NOT_FOUND');
+    if (user.status === 'ACTIVE') {
+      throw new ApiError('This account is already active. Please log in.', 409, 'ALREADY_ACTIVE');
+    }
+    if (user.status === 'DEACTIVATED') {
+      throw new ApiError('This account has been deactivated. Contact an administrator.', 403, 'ACCOUNT_DEACTIVATED');
+    }
+
+    // 3. Hash password and activate
+    const passwordHash = await bcrypt.hash(password, 10);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        status:   'ACTIVE',
+        isActive: true,
+        ...(name ? { name } : {}),
+      },
+    });
+
+    // 4. Consume token
+    await invitationService.consume(rawToken);
+
+    // 5. Audit
+    auditService.log({
+      actorId:    user.id,
+      action:     'ACCEPTED_INVITATION',
+      targetId:   invitation.id,
+      targetType: 'Invitation',
+      meta:       { role: user.role, email: user.email },
+    });
+
+    // 6. Issue JWT
+    const token = generateToken({
+      userId:     updated.id,
+      role:       updated.role,
+      customerId: updated.customerId,
+    });
+
+    return {
+      user: this._safeUser(updated),
+      token,
+    };
+  }
+
+  /**
+   * Validate an invitation token WITHOUT consuming it.
+   * Used by frontend Step 1 to preview the invitation (role, invitedBy).
+   */
+  async previewInvitation(rawToken) {
+    const inv = await invitationService.validate(rawToken);
+    return {
+      email:      inv.email,
+      role:       inv.role,
+      type:       inv.type,
+      expiresAt:  inv.expiresAt,
+      invitedBy:  inv.invitedBy?.name || 'Administrator',
+    };
+  }
+
+  /**
+   * Authenticate with email + password.
    */
   async login(email, password) {
     const cleanEmail = (email || '').toLowerCase().trim();
     const user = await userRepository.findByEmail(cleanEmail);
 
-    // Generic error message for both non-existent user and bad password
-    if (!user) {
-      throw new ApiError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
-    }
+    // Generic error: do not reveal whether email exists
+    if (!user) throw new ApiError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
 
-    if (!user.isActive) {
+    if (user.status === 'INVITATION_PENDING') {
+      throw new ApiError(
+        'Your invitation has not been accepted yet. Check your email for the invitation link.',
+        403,
+        'INVITATION_NOT_ACCEPTED'
+      );
+    }
+    if (user.status === 'DEACTIVATED' || !user.isActive) {
       throw new ApiError('This account has been deactivated. Contact an administrator.', 403, 'ACCOUNT_DEACTIVATED');
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      throw new ApiError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
-    }
+    const isMatch = await bcrypt.compare(password, user.passwordHash || '');
+    if (!isMatch) throw new ApiError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
 
-    // Minimum identity claims
     const token = generateToken({
-      userId: user.id,
-      role: user.role,
+      userId:     user.id,
+      role:       user.role,
       customerId: user.customerId,
     });
 
-    const safeUser = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      customerTier: user.customerTier,
-      customerId: user.customerId,
-      customer: user.customer,
-    };
-
-    return { user: safeUser, token };
+    return { user: this._safeUser(user), token };
   }
 
   /**
-   * Return profile for authenticated user
+   * Return profile for authenticated user.
    */
   async getCurrentUser(userId) {
     const user = await userRepository.findById(userId);
     if (!user || !user.isActive) {
       throw new ApiError('User not found or deactivated.', 404, 'USER_NOT_FOUND');
     }
+    return this._safeUser(user);
+  }
 
+  _safeUser(user) {
     return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+      id:          user.id,
+      name:        user.name,
+      email:       user.email,
+      role:        user.role,
+      status:      user.status,
       customerTier: user.customerTier,
-      customerId: user.customerId,
-      customer: user.customer,
+      customerId:  user.customerId,
+      customer:    user.customer,
     };
   }
 }

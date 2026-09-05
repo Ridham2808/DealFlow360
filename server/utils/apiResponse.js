@@ -36,8 +36,28 @@ function sendError(res, statusCode = 500, code = 'INTERNAL_ERROR', message = 'An
   });
 }
 
+function success(data = null, message = null) {
+  const res = { success: true };
+  if (data !== null && data !== undefined) res.data = data;
+  if (message) res.message = message;
+  return res;
+}
+
+function error(message = 'An unexpected error occurred', statusCode = 500, code = 'INTERNAL_ERROR', details = {}) {
+  return {
+    success: false,
+    error: {
+      code,
+      message,
+      details,
+    },
+  };
+}
+
 module.exports = {
   ApiError,
   sendSuccess,
   sendError,
+  success,
+  error,
 };
