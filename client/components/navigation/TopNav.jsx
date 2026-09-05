@@ -114,8 +114,8 @@ export default function TopNav() {
             </span>
           </Link>
 
-          {/* Center Navigation Pills - Faithful to User Wireframe */}
-          <nav className="hidden md:flex items-center gap-1.5 py-1">
+          {/* Center Navigation Pills - Faithful to Linear UI Specification */}
+          <nav className="hidden md:flex items-center gap-1 py-1">
             {navItems.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -124,8 +124,8 @@ export default function TopNav() {
                   href={item.href}
                   className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center transition-all ${
                     active
-                      ? 'bg-[#18181b] text-[#ededed] border border-[#2e2e34] shadow-[0_1px_2px_rgba(0,0,0,0.5)] font-semibold'
-                      : 'text-[#888891] hover:text-[#e4e4e7] hover:bg-[#121215] border border-transparent'
+                      ? 'bg-[#2563eb] text-white font-semibold shadow-sm'
+                      : 'text-[#888891] hover:text-[#ededed] hover:bg-[#14151b] border border-transparent'
                   }`}
                 >
                   {item.label}
@@ -139,13 +139,15 @@ export default function TopNav() {
                 type="button"
                 onClick={() => setIsProductOpen((prev) => !prev)}
                 className={`h-8 px-3 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
-                  isProductActive || isProductOpen
-                    ? 'bg-[#18181b] text-[#ededed] border border-[#2e2e34] shadow-[0_1px_2px_rgba(0,0,0,0.5)] font-semibold'
-                    : 'text-[#888891] hover:text-[#e4e4e7] hover:bg-[#121215] border border-transparent'
+                  isProductActive
+                    ? 'bg-[#2563eb] text-white font-semibold shadow-sm'
+                    : isProductOpen
+                    ? 'bg-[#18181f] text-white border border-[#2b2d3d]'
+                    : 'text-[#888891] hover:text-[#ededed] hover:bg-[#14151b] border border-transparent'
                 }`}
               >
                 <span>Product</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-[#777] transition-transform duration-150 ${isProductOpen ? 'rotate-180 text-white' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${isProductOpen ? 'rotate-180 text-white' : 'text-[#777]'}`} />
               </button>
 
               {/* Product Dropdown Menu */}
