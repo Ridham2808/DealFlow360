@@ -260,15 +260,15 @@ export default function QuotationDetailPage() {
             )}
             <Badge
               variant={
-                quotation.status === 'APPROVED' || quotation.status === 'CONFIRMED'
+                quotation?.status === 'APPROVED' || quotation?.status === 'CONFIRMED'
                   ? 'success'
-                  : quotation.status === 'PENDING_APPROVAL'
+                  : quotation?.status === 'PENDING_APPROVAL'
                   ? 'warning'
                   : 'neutral'
               }
               size="sm"
             >
-              {quotation.status.replace(/_/g, ' ')}
+              {(quotation?.status || 'DRAFT').replace(/_/g, ' ')}
             </Badge>
           </div>
         </div>
@@ -294,14 +294,6 @@ export default function QuotationDetailPage() {
         </div>
       </div>
 
-      {/* Amber Notification Banner: Exact match to wireframe */}
-      <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-900/40 flex items-start gap-2.5 text-xs text-amber-200/90 leading-relaxed">
-        <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold text-amber-300">Deterministic Governance Rule: </span>
-          Discount is checked against line's own limit first, then any at-order level, not only at submit time.
-        </div>
-      </div>
 
       {/* Success Notification */}
       {successMessage && (
@@ -639,6 +631,11 @@ export default function QuotationDetailPage() {
             </button>
           </form>
         )}
+      </div>
+
+      {/* Screen #4 Wireframe Helper Banner (Muted Dark Gold, No Neon Glow) */}
+      <div className="p-3 rounded-lg bg-[#14120c] border border-[#3d3215] text-xs text-[#c9b276] leading-relaxed flex items-center gap-2">
+        <span>Discount is checked against each line&apos;s max limit as soon as it is entered, not only at submit time.</span>
       </div>
 
       {/* Live Margin Indicator & Totals Section (Authoritative Server Computation) */}

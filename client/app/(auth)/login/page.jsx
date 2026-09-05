@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Eye, EyeOff, Loader2, AlertCircle, CheckCircle2,
   ArrowRight, ShieldCheck, MailCheck,
@@ -27,7 +27,8 @@ const ROLE_LABELS = {
 
 export default function AuthPage({ defaultTab }) {
   const pathname = usePathname();
-  const { login, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const { user, isAuthenticated, login, loading: authLoading } = useAuth();
 
   const isSignup = defaultTab === 'signup' || pathname?.includes('/signup');
   const [tab, setTab] = useState(isSignup ? 'signup' : 'login');
@@ -36,6 +37,21 @@ export default function AuthPage({ defaultTab }) {
     if (pathname?.includes('/signup')) setTab('signup');
     else if (pathname?.includes('/login')) setTab('login');
   }, [pathname]);
+
+  // If already authenticated, redirect to workspace or portal without flashing
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user) {
+      if (user.role === 'CUSTOMER') {
+        router.replace('/portal');
+      } else {
+        router.replace('/dashboard');
+      }
+    }
+  }, [authLoading, isAuthenticated, user, router]);
+
+  if (authLoading || isAuthenticated) {
+    return null;
+  }
 
   // ── Login state ────────────────────────────────────────────────
   const [email, setEmail]       = useState('');

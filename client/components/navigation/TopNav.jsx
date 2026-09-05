@@ -69,7 +69,44 @@ export default function TopNav() {
       match: '/quotations',
       roles: ['ADMIN', 'SALES_MANAGER', 'SALES_REP', 'FINANCE'] 
     },
+    { 
+      label: 'Approvals',    
+      href: '/approvals',    
+      match: '/approvals',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
+    { 
+      label: 'Fulfillment',    
+      href: '/fulfillment',    
+      match: '/fulfillment',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE'] 
+    },
+    { 
+      label: 'Subscriptions',    
+      href: '/subscriptions',    
+      match: '/subscriptions',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
+    { 
+      label: 'Invoices',    
+      href: '/invoices',    
+      match: '/invoices',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
+    { 
+      label: 'Deal Health',    
+      href: '/deal-health',    
+      match: '/deal-health',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
+    { 
+      label: 'Reports',    
+      href: '/reports',    
+      match: '/reports',
+      roles: ['ADMIN', 'SALES_MANAGER', 'FINANCE', 'SALES_REP'] 
+    },
   ];
+
 
   const ALL_PRODUCT_SUB_ITEMS = [
     { 
