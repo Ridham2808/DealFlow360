@@ -30,11 +30,12 @@ import {
 import { Badge, Spinner } from '../../../components/ui';
 
 const KANBAN_STAGES = [
-  { key: 'DRAFT',            label: 'Draft',             badgeVariant: 'neutral' },
-  { key: 'PENDING_APPROVAL', label: 'Pending Approval',  badgeVariant: 'warning' },
-  { key: 'APPROVED',         label: 'Approved',          badgeVariant: 'success' },
-  { key: 'UNDER_NEGOTIATION',label: 'Negotiation',       badgeVariant: 'info' },
-  { key: 'CONFIRMED',        label: 'Confirmed',         badgeVariant: 'success' },
+  { key: 'DRAFT',            label: 'Draft',                badgeVariant: 'neutral' },
+  { key: 'PENDING_APPROVAL', label: 'Pending Approval',     badgeVariant: 'warning' },
+  { key: 'RETURNED',         label: 'Returned for Review',  badgeVariant: 'warning' },
+  { key: 'APPROVED',         label: 'Approved',             badgeVariant: 'success' },
+  { key: 'UNDER_NEGOTIATION',label: 'Negotiation',          badgeVariant: 'info' },
+  { key: 'CONFIRMED',        label: 'Confirmed',            badgeVariant: 'success' },
 ];
 
 export default function QuotationsPage() {
@@ -587,23 +588,34 @@ export default function QuotationsPage() {
             </div>
           ) : viewMode === 'kanban' ? (
             /* KANBAN VIEW */
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3.5 overflow-x-auto pb-4 items-start">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 overflow-x-auto pb-4 items-start">
               {KANBAN_STAGES.map((stage) => {
                 const stageQuotes = quotations.filter((q) => q.status === stage.key);
                 const stageTotal = stageQuotes.reduce((acc, q) => acc + Number(q.grandTotal || 0), 0);
+                const isReturnedStage = stage.key === 'RETURNED';
 
                 return (
                   <div
                     key={stage.key}
-                    className="flex flex-col rounded-xl bg-[#0b0c0e] border border-[#191a20] min-w-[240px] max-h-[calc(100vh-250px)] overflow-hidden"
+                    className={`flex flex-col rounded-xl bg-[#0b0c0e] border min-w-[230px] max-h-[calc(100vh-250px)] overflow-hidden ${
+                      isReturnedStage ? 'border-amber-900/30' : 'border-[#191a20]'
+                    }`}
                   >
                     {/* Stage Header */}
-                    <div className="p-3 border-b border-[#191a20] flex items-center justify-between">
+                    <div className={`p-3 border-b flex items-center justify-between ${
+                      isReturnedStage ? 'border-amber-900/30 bg-amber-950/10' : 'border-[#191a20]'
+                    }`}>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-[#ededed] tracking-tight">
+                        <span className={`text-xs font-semibold tracking-tight ${
+                          isReturnedStage ? 'text-amber-300' : 'text-[#ededed]'
+                        }`}>
                           {stage.label}
                         </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[#181920] text-[#71717a] border border-[#222228]">
+                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full border ${
+                          isReturnedStage
+                            ? 'bg-amber-950/50 text-amber-300 border-amber-800/60'
+                            : 'bg-[#181920] text-[#71717a] border-[#222228]'
+                        }`}>
                           {stageQuotes.length}
                         </span>
                       </div>
@@ -623,10 +635,23 @@ export default function QuotationsPage() {
                           <div
                             key={q.id}
                             onClick={() => router.push(`/quotations/${q.id}`)}
-                            className="p-3 rounded-lg bg-[#111216] border border-[#1e1f26] hover:border-[#333542] cursor-pointer transition-colors shadow-xs group"
+                            className={`p-3 rounded-lg border cursor-pointer transition-colors shadow-xs group ${
+                              isReturnedStage
+                                ? 'bg-[#14120c] border-amber-900/50 hover:border-amber-600/70'
+                                : 'bg-[#111216] border-[#1e1f26] hover:border-[#333542]'
+                            }`}
                           >
+                            {isReturnedStage && (
+                              <div className="text-[10px] text-amber-400 font-semibold mb-1 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" />
+                                <span>Returned by Manager</span>
+                              </div>
+                            )}
+
                             <div className="flex items-center justify-between gap-1 mb-1.5">
-                              <span className="font-mono text-xs font-bold text-[#ededed] group-hover:text-blue-400 transition-colors">
+                              <span className={`font-mono text-xs font-bold transition-colors ${
+                                isReturnedStage ? 'text-amber-300 group-hover:text-amber-200' : 'text-[#ededed] group-hover:text-blue-400'
+                              }`}>
                                 {q.quoteNumber}
                               </span>
                               {getRiskBadge(q.riskLevel, q.blendedRiskScore)}
@@ -636,7 +661,9 @@ export default function QuotationsPage() {
                               {q.customer?.name || 'Customer'}
                             </div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-[#181920] text-xs">
+                            <div className={`flex items-center justify-between pt-2 border-t text-xs ${
+                              isReturnedStage ? 'border-amber-900/30' : 'border-[#181920]'
+                            }`}>
                               <div className="font-mono font-bold text-[#ededed]">
                                 ${Number(q.grandTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                               </div>
