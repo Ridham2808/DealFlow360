@@ -1,5 +1,6 @@
 const prisma = require('../prisma/prisma');
 const invitationService = require('./invitationService');
+const emailService = require('./emailService');
 const auditService = require('./auditService');
 const { ApiError } = require('../utils/apiResponse');
 
@@ -30,9 +31,9 @@ class AdminCustomerService {
 
   /**
    * Admin creates a customer company record.
-   * Does NOT automatically send portal invite — Admin calls sendPortalInvite separately.
+   * Can optionally send portal invite immediately if contactName and contactEmail provided.
    */
-  async createCustomer({ name, email, tier = 'BRONZE', currency = 'INR', assignedRepId, adminId }) {
+  async createCustomer({ name, email, tier = 'BRONZE', currency = 'USD', contactName, contactEmail, sendPortalInvite = false, adminId }) {
     const cleanEmail = email.toLowerCase().trim();
     const existing = await prisma.customer.findUnique({ where: { email: cleanEmail } });
     if (existing) throw new ApiError('A customer with this email already exists.', 409, 'EMAIL_EXISTS');
@@ -54,7 +55,21 @@ class AdminCustomerService {
       meta:       { name, tier, currency },
     });
 
-    return customer;
+    let portalInviteResult = null;
+    if (sendPortalInvite && (contactEmail || cleanEmail)) {
+      const inviteTargetEmail = contactEmail ? contactEmail.toLowerCase().trim() : cleanEmail;
+      const inviteTargetName  = contactName || name;
+      try {
+        portalInviteResult = await this.sendPortalInvite(customer.id, inviteTargetEmail, inviteTargetName, adminId);
+      } catch (err) {
+        console.error('[AdminCustomerService] Failed auto portal invite on create:', err.message);
+      }
+    }
+
+    return {
+      ...customer,
+      portalInvite: portalInviteResult,
+    };
   }
 
   // ─── UPDATE ───────────────────────────────────────────────────────
@@ -146,12 +161,19 @@ class AdminCustomerService {
       data:  { portalUserId: portalUser.id },
     });
 
+    const emailResult = await emailService.sendCustomerPortalInvitation({
+      to:          contactEmail,
+      companyName: customer.name,
+      contactName: contactName || customer.name,
+      rawToken,
+    });
+
     auditService.log({
       actorId:    adminId,
       action:     'SENT_PORTAL_INVITE',
       targetId:   customerId,
       targetType: 'Customer',
-      meta:       { portalUserId: portalUser.id, invitationId: invitation.id },
+      meta:       { portalUserId: portalUser.id, invitationId: invitation.id, emailDelivered: emailResult.success },
     });
 
     return {
@@ -159,6 +181,8 @@ class AdminCustomerService {
       portalUser: { id: portalUser.id, email: portalUser.email },
       rawToken,
       invitationId: invitation.id,
+      emailSent:    emailResult.success,
+      emailError:   emailResult.error || null,
     };
   }
 

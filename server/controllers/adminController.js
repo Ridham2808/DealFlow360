@@ -18,7 +18,7 @@ class AdminController {
 
   async createUser(req, res, next) {
     try {
-      const { name, email, role } = req.body;
+      const { name, email, role, team, sendInvite } = req.body;
       if (!name || !email || !role) {
         return res.status(400).json(error('name, email and role are required.', 400, 'VALIDATION_ERROR'));
       }
@@ -28,12 +28,23 @@ class AdminController {
       }
 
       const result = await adminUserService.createAndInvite({
-        name, email, role,
+        name,
+        email,
+        role,
+        team: team || 'Sales Operations',
+        sendInvite: sendInvite !== false,
         invitedById: req.user.userId,
       });
 
-      // rawToken returned in response (dev mode) — in production this would be emailed only
       return res.status(201).json(success(result, 'User created and invitation generated.'));
+    } catch (err) { next(err); }
+  }
+
+  async editUser(req, res, next) {
+    try {
+      const { name, role } = req.body;
+      const user = await adminUserService.editUser(req.params.id, { name, role }, req.user.userId);
+      return res.json(success({ user }, 'User details updated.'));
     } catch (err) { next(err); }
   }
 
@@ -90,12 +101,19 @@ class AdminController {
 
   async createCustomer(req, res, next) {
     try {
-      const { name, email, tier, currency, assignedRepId } = req.body;
+      const { name, email, tier, currency, assignedRepId, contactName, contactEmail, sendPortalInvite } = req.body;
       if (!name || !email) {
         return res.status(400).json(error('name and email are required.', 400, 'VALIDATION_ERROR'));
       }
       const customer = await adminCustomerService.createCustomer({
-        name, email, tier, currency, assignedRepId,
+        name,
+        email,
+        tier,
+        currency,
+        assignedRepId,
+        contactName,
+        contactEmail,
+        sendPortalInvite: Boolean(sendPortalInvite),
         adminId: req.user.userId,
       });
       return res.status(201).json(success({ customer }, 'Customer created.'));
