@@ -14,8 +14,10 @@ function validateCreateProduct(body) {
     throw new ApiError('SKU must be 3-50 characters alphanumeric with hyphens or underscores.', 400, 'VALIDATION_ERROR');
   }
 
-  if (!category || typeof category !== 'string' || category.trim().length < 2) {
-    throw new ApiError('Product category is required.', 400, 'VALIDATION_ERROR');
+  const ALLOWED_CATEGORIES = ['HARDWARE', 'SERVICES', 'SUBSCRIPTION'];
+  const normCategory = (category || '').trim().toUpperCase();
+  if (!normCategory || !ALLOWED_CATEGORIES.includes(normCategory)) {
+    throw new ApiError('Product category must be exactly HARDWARE, SERVICES, or SUBSCRIPTION.', 400, 'VALIDATION_ERROR');
   }
 
   const numBasePrice = Number(basePrice);
@@ -71,10 +73,12 @@ function validateUpdateProduct(body) {
   }
 
   if (category !== undefined) {
-    if (typeof category !== 'string' || category.trim().length < 2) {
-      throw new ApiError('Product category cannot be empty.', 400, 'VALIDATION_ERROR');
+    const ALLOWED_CATEGORIES = ['HARDWARE', 'SERVICES', 'SUBSCRIPTION'];
+    const normCategory = (category || '').trim().toUpperCase();
+    if (!ALLOWED_CATEGORIES.includes(normCategory)) {
+      throw new ApiError('Product category must be exactly HARDWARE, SERVICES, or SUBSCRIPTION.', 400, 'VALIDATION_ERROR');
     }
-    updates.category = category.trim();
+    updates.category = normCategory;
   }
 
   if (basePrice !== undefined) {
