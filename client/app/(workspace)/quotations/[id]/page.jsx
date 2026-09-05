@@ -23,13 +23,18 @@ import {
   ShieldCheck, 
   Package,
   Calendar,
-  FileText,
   Building2,
   Tag,
-  Percent,
+  Search,
+  Wrench,
+  Shield,
+  Repeat,
+  Box,
   Layers,
-  ChevronDown,
-  Info
+  Clock,
+  MapPin,
+  FileText,
+  UserCheck
 } from 'lucide-react';
 import { Badge, Spinner } from '../../../../components/ui';
 
@@ -55,13 +60,18 @@ export default function QuotationDetailPage() {
   // Lookups for Adding New Lines
   const [catalogProducts, setCatalogProducts] = useState([]);
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [allCustomers, setAllCustomers] = useState([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
 
-  // Sales Rep Editable Header Fields
-  const [expirationDate, setExpirationDate] = useState('');
-  const [internalNotes, setInternalNotes] = useState('');
-  const [orderDiscount, setOrderDiscount] = useState(0);
-  const [isDirty, setIsDirty] = useState(false);
+  // Catalog Filters & Search
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState('ALL'); // ALL, PHYSICAL_PRODUCT, SERVICE, WARRANTY, SUBSCRIPTION
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
+
+  // Change Customer State
+  const [showChangeCustomerModal, setShowChangeCustomerModal] = useState(false);
+  const [newCustomerId, setNewCustomerId] = useState('');
+  const [changingCustomer, setChangingCustomer] = useState(false);
 
   // Add Item State
   const [selectedProductId, setSelectedProductId] = useState('');
@@ -69,7 +79,14 @@ export default function QuotationDetailPage() {
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [inputQuantity, setInputQuantity] = useState(1);
   const [inputDiscount, setInputDiscount] = useState(0);
-  const [inputLineNote, setInputLineNote] = useState('');
+  const [serviceDeliveryDate, setServiceDeliveryDate] = useState('');
+  const [serviceLocation, setServiceLocation] = useState('');
+  const [serviceEstimatedHours, setServiceEstimatedHours] = useState('');
+  const [serviceNote, setServiceNote] = useState('');
+  const [warrantyCoverageDuration, setWarrantyCoverageDuration] = useState('2 Years');
+  const [warrantyLinkedProductId, setWarrantyLinkedProductId] = useState('');
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState('');
+  const [subscriptionSeats, setSubscriptionSeats] = useState(1);
   const [addingLine, setAddingLine] = useState(false);
 
   // Modals & UI States
@@ -77,6 +94,8 @@ export default function QuotationDetailPage() {
   const [deleteConfirmLineId, setDeleteConfirmLineId] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lineDetailModal, setLineDetailModal] = useState(null);
 
   // Load quotation data
   useEffect(() => {
@@ -85,37 +104,19 @@ export default function QuotationDetailPage() {
     }
   }, [id, loadQuotation]);
 
-  // Sync header fields when quotation loads
-  useEffect(() => {
-    if (quotation) {
-      if (quotation.expirationDate) {
-        try {
-          const d = new Date(quotation.expirationDate);
-          if (!isNaN(d.getTime())) {
-            setExpirationDate(d.toISOString().split('T')[0]);
-          }
-        } catch {
-          // ignore
-        }
-      }
-      // If internal notes were stored in audit logs or meta
-      if (quotation.internalNotes) {
-        setInternalNotes(quotation.internalNotes);
-      }
-    }
-  }, [quotation]);
-
-  // Load catalog lookups
+  // Load catalog lookups & customers
   useEffect(() => {
     async function loadCatalog() {
       setLoadingCatalog(true);
       try {
-        const [prodRes, planRes] = await Promise.all([
+        const [prodRes, planRes, custRes] = await Promise.all([
           api.get('/quotations/lookup/products'),
           api.get('/quotations/lookup/subscription-plans'),
+          api.get('/quotations/lookup/customers'),
         ]);
         if (prodRes?.data) setCatalogProducts(prodRes.data);
         if (planRes?.data) setSubscriptionPlans(planRes.data);
+        if (custRes?.data) setAllCustomers(custRes.data);
         if (prodRes?.data?.length > 0) setSelectedProductId(prodRes.data[0].id);
       } catch {
         // non-blocking
@@ -126,11 +127,42 @@ export default function QuotationDetailPage() {
     loadCatalog();
   }, []);
 
-  // Selected product object
+  // Filtered catalog products
+  const filteredCatalogProducts = useMemo(() => {
+    return catalogProducts.filter((p) => {
+      const matchesSearch = 
+        !catalogSearch.trim() ||
+        p.name.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(catalogSearch.toLowerCase());
+
+      const matchesType = 
+        selectedTypeFilter === 'ALL' || p.itemType === selectedTypeFilter;
+
+      const matchesCategory = 
+        selectedCategoryFilter === 'ALL' || p.category === selectedCategoryFilter;
+
+      return matchesSearch && matchesType && matchesCategory && p.isActive;
+    });
+  }, [catalogProducts, catalogSearch, selectedTypeFilter, selectedCategoryFilter]);
+
+  // Active selected product object
   const activeProduct = useMemo(
     () => catalogProducts.find((p) => p.id === selectedProductId),
     [catalogProducts, selectedProductId]
   );
+
+  // Available categories for filter dropdown
+  const availableCategories = useMemo(() => {
+    const set = new Set(catalogProducts.map((p) => p.category).filter(Boolean));
+    return Array.from(set);
+  }, [catalogProducts]);
+
+  // Physical products currently on quote (for warranty linking)
+  const physicalQuoteLines = useMemo(() => {
+    return (quotation?.lines || []).filter(
+      (l) => l.itemType === 'PHYSICAL_PRODUCT' || (!['SERVICE', 'WARRANTY', 'SUBSCRIPTION'].includes(l.itemType) && !l.isRecurring)
+    );
+  }, [quotation?.lines]);
 
   // Reset variant when product changes
   useEffect(() => {
@@ -139,7 +171,11 @@ export default function QuotationDetailPage() {
     } else {
       setSelectedVariantId('');
     }
-  }, [selectedProductId, activeProduct]);
+
+    if (activeProduct?.itemType === 'WARRANTY' && physicalQuoteLines.length > 0) {
+      setWarrantyLinkedProductId(physicalQuoteLines[0].productId);
+    }
+  }, [selectedProductId, activeProduct, physicalQuoteLines]);
 
   // Safe checks on quotation data
   const hasLines = Boolean(quotation?.lines && quotation.lines.length > 0);
@@ -174,31 +210,73 @@ export default function QuotationDetailPage() {
     });
   }, [quotation?.lines]);
 
+  // Handle Controlled Change Customer Action (Draft Only)
+  const handleChangeCustomer = async () => {
+    if (!newCustomerId || newCustomerId === quotation?.customerId) {
+      setShowChangeCustomerModal(false);
+      return;
+    }
+    setChangingCustomer(true);
+    try {
+      await api.patch(`/quotations/${id}`, {
+        customerId: newCustomerId,
+        version: quotation.version,
+      });
+      setShowChangeCustomerModal(false);
+      setSuccessMessage('Customer updated. Server recomputed all prices, discount ceilings, and risk.');
+      setTimeout(() => setSuccessMessage(null), 3500);
+      loadQuotation(id);
+    } catch (err) {
+      setError(err.message || 'Failed to change customer.');
+    } finally {
+      setChangingCustomer(false);
+    }
+  };
+
   // Handle Add Line Item
   const handleAddLine = async (e) => {
     e?.preventDefault();
     if (!selectedProductId || !canEdit) return;
 
+    // Validate warranty linking if item is a warranty
+    if (activeProduct?.itemType === 'WARRANTY' && physicalQuoteLines.length === 0) {
+      setError('A warranty must be linked to a physical product covered in this quotation. Please add a physical product first.');
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+
     setAddingLine(true);
     try {
-      await mutateLine({
+      const payload = {
         productId: selectedProductId,
         variantId: selectedVariantId || null,
         subscriptionPlanId: selectedPlanId || null,
         quantity: Math.max(1, parseInt(inputQuantity, 10) || 1),
         discountPercent: Math.max(0, Math.min(100, parseFloat(inputDiscount) || 0)),
-        lineNote: inputLineNote.trim() || undefined,
-      });
+        itemType: activeProduct?.itemType || 'PHYSICAL_PRODUCT',
+        serviceDeliveryDate: serviceDeliveryDate || undefined,
+        serviceLocation: serviceLocation.trim() || undefined,
+        serviceEstimatedHours: serviceEstimatedHours ? parseFloat(serviceEstimatedHours) : undefined,
+        serviceNote: serviceNote.trim() || undefined,
+        warrantyCoverageDuration: warrantyCoverageDuration || undefined,
+        warrantyLinkedProductId: warrantyLinkedProductId || undefined,
+        subscriptionStartDate: subscriptionStartDate || undefined,
+        subscriptionSeats: subscriptionSeats ? parseInt(subscriptionSeats, 10) : undefined,
+      };
 
-      // Reset form
+      await mutateLine(payload);
+
+      // Reset form defaults
       setInputQuantity(1);
       setInputDiscount(0);
-      setInputLineNote('');
+      setServiceNote('');
+      setServiceLocation('');
+      setServiceEstimatedHours('');
       setSelectedPlanId('');
-      setSuccessMessage('Line item added to quotation successfully.');
+      setSuccessMessage(`Added ${activeProduct.name} (${activeProduct.itemType}) to quotation.`);
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch {
-      // Error handled in context
+    } catch (err) {
+      // Error is set in context
     } finally {
       setAddingLine(false);
     }
@@ -278,8 +356,6 @@ export default function QuotationDetailPage() {
     try {
       await api.patch(`/quotations/${id}`, {
         currency: quotation.currency,
-        expirationDate: expirationDate || null,
-        notes: internalNotes.trim() || undefined,
         version: quotation.version,
       });
       setIsDirty(false);
@@ -343,106 +419,122 @@ export default function QuotationDetailPage() {
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Top Header & Breadcrumbs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#18181b] pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleCancelClick}
-              className="h-7 w-7 rounded-lg bg-[#111216] border border-[#222228] text-[#888] hover:text-[#ededed] flex items-center justify-center transition-colors cursor-pointer"
-              title="Return to Quotations"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-            </button>
+      {/* 1. Quotation Detail Header (Exact Mockup Structure) */}
+      <div className="border-b border-[#18181b] pb-5 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Link href="/quotations" className="text-xs text-[#71717a] hover:text-[#ededed] transition-colors">
-                Quotations
-              </Link>
-              <span className="text-xs text-[#444]">/</span>
-              <span className="font-mono text-xs font-semibold text-[#a1a1aa]">{quotation.quoteNumber}</span>
+              <button
+                onClick={handleCancelClick}
+                className="h-7 w-7 rounded-lg bg-[#111216] border border-[#222228] text-[#888] hover:text-[#ededed] flex items-center justify-center transition-colors cursor-pointer"
+                title="Return to Quotations list"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+              </button>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#ededed]">
+                Quotation Detail: {quotation.quoteNumber} ({quotation.customer?.name || 'Customer'})
+              </h1>
+              <Badge
+                variant={
+                  quotation.status === 'APPROVED' || quotation.status === 'CONFIRMED'
+                    ? 'success'
+                    : quotation.status === 'PENDING_APPROVAL'
+                    ? 'warning'
+                    : quotation.status === 'RETURNED'
+                    ? 'danger'
+                    : 'neutral'
+                }
+                size="sm"
+              >
+                Status: {(quotation.status || 'DRAFT').replace(/_/g, ' ')}
+              </Badge>
+              {canEdit ? (
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Editable
+                </span>
+              ) : isPendingApproval ? (
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  <span>Locked for Review</span>
+                </span>
+              ) : null}
             </div>
+            <p className="text-xs text-[#71717a]">
+              Opened by clicking a row on the Quotations list. Add products, apply discounts, review upsells.
+            </p>
           </div>
 
-          {/* Header Title & Status Badges */}
-          <div className="flex flex-wrap items-center gap-2.5 pt-1">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#ededed]">
-              Quotation Detail: {quotation.quoteNumber}
-            </h1>
-            <span className="text-sm sm:text-base text-[#888] font-normal">
-              ({quotation.customer?.name || 'Acme Corp'})
-            </span>
-
-            {/* Version */}
-            <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-md bg-[#161722] text-[#c4c6dc] border border-[#27293a]">
-              Version v{quotation.version || 1}
-            </span>
-
-            {/* Status */}
-            <Badge
-              variant={
-                quotation.status === 'APPROVED' || quotation.status === 'CONFIRMED'
-                  ? 'success'
-                  : quotation.status === 'PENDING_APPROVAL'
-                  ? 'warning'
-                  : quotation.status === 'RETURNED'
-                  ? 'danger'
-                  : 'neutral'
-              }
-              size="sm"
+          <div className="flex items-center gap-3 self-end sm:self-center">
+            <div className="text-right">
+              <span className="text-[10px] font-mono text-[#71717a] block">
+                Version v{quotation.version} • {quotation.currency}
+              </span>
+              <span className="text-[10px] text-[#888]">
+                {canEdit ? 'Sales Rep Workspace' : isPendingApproval ? 'Locked for Review' : quotation.status}
+              </span>
+            </div>
+            <button
+              onClick={() => loadQuotation(id)}
+              disabled={saving}
+              className="h-8 w-8 rounded-lg bg-[#111216] border border-[#222228] text-[#888] hover:text-[#ededed] flex items-center justify-center transition-colors cursor-pointer"
+              title="Reload authoritative quotation"
             >
-              Status: {(quotation.status || 'DRAFT').replace(/_/g, ' ')}
-            </Badge>
-
-            {/* Editable or Locked for Review */}
-            {canEdit ? (
-              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Editable
-              </span>
-            ) : isPendingApproval ? (
-              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                <Lock className="w-3 h-3" />
-                <span>Locked for Review</span>
-              </span>
-            ) : (
-              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                {quotation.status}
-              </span>
-            )}
-
-            {/* Item count */}
-            <span className="text-xs font-mono text-[#71717a]">
-              {lineCount} item{lineCount === 1 ? '' : 's'}
-            </span>
-
-            {/* Customer Tier */}
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#101924] text-[#60a5fa] border border-[#1e3a5f]">
-              {customerTier} Tier ({tierCeilingPercent}% Ceiling)
-            </span>
+              <RefreshCw className={`w-3.5 h-3.5 ${saving ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
 
-        {/* Live sync & Version indicator */}
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <span className="text-[10px] font-mono text-[#71717a] block">
-              Version v{quotation.version} • {quotation.currency}
-            </span>
-            <span className="text-[10px] text-[#888]">
-              {canEdit ? 'Sales Rep Editable' : isPendingApproval ? 'Locked for Review' : quotation.status}
+        {/* Read-Only Header Fields: Customer & Price List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+          {/* Customer Field */}
+          <div className="p-3.5 rounded-xl bg-[#111216] border border-[#1e1f26] flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="text-[10px] uppercase font-mono tracking-wider text-[#71717a] flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                <span>Customer</span>
+              </div>
+              <div className="text-sm font-semibold text-[#ededed] flex items-center gap-2">
+                <span>{quotation.customer?.name}</span>
+                <span className="text-xs font-mono font-normal text-[#888]">({quotation.customer?.email})</span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#162130] text-[#60a5fa] border border-[#223956]">
+                  {customerTier} Tier ({tierCeilingPercent}% Ceiling)
+                </span>
+              </div>
+            </div>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNewCustomerId(quotation.customerId);
+                  setShowChangeCustomerModal(true);
+                }}
+                className="text-[11px] text-blue-400 hover:text-blue-300 font-medium px-2.5 py-1 rounded-lg border border-blue-500/30 hover:bg-blue-500/10 transition-colors cursor-pointer"
+              >
+                Change Customer
+              </button>
+            )}
+          </div>
+
+          {/* Price List Field */}
+          <div className="p-3.5 rounded-xl bg-[#111216] border border-[#1e1f26] flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="text-[10px] uppercase font-mono tracking-wider text-[#71717a] flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Price List</span>
+              </div>
+              <div className="text-sm font-semibold text-[#ededed] flex items-center gap-2">
+                <span>{quotation.priceList?.name || 'Gold Enterprise Tier 2026'}</span>
+                <span className="text-xs font-mono text-[#888]">({quotation.currency})</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono text-[#666] bg-[#171822] px-2 py-0.5 rounded border border-[#272836]">
+              Auto-Resolved
             </span>
           </div>
-          <button
-            onClick={() => loadQuotation(id)}
-            disabled={saving}
-            className="h-8 w-8 rounded-lg bg-[#111216] border border-[#222228] text-[#888] hover:text-[#ededed] flex items-center justify-center transition-colors cursor-pointer"
-            title="Reload authoritative quotation"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${saving ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 
-      {/* Return for Revision Notice */}
+      {/* Approver Return Notice */}
       {quotation.status === 'RETURNED' && (
         <div className="p-4 rounded-xl bg-[#1b140d] border border-[#4d3618] text-xs text-[#f59e0b] flex items-start gap-3">
           <RotateCcw className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -454,13 +546,13 @@ export default function QuotationDetailPage() {
               {returnedStep?.notes || 'Approver requested modifications to line discounts and pricing before approval can proceed.'}
             </p>
             <span className="text-[11px] text-white font-medium block pt-1">
-              Re-editing has been enabled. Make the required adjustments and click Submit for Approval.
+              Re-editing has been enabled. Adjust the line items and click Submit for Approval.
             </span>
           </div>
         </div>
       )}
 
-      {/* Success Notification */}
+      {/* Feedback Messages */}
       {successMessage && (
         <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-900/50 text-xs text-emerald-400 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -468,7 +560,6 @@ export default function QuotationDetailPage() {
         </div>
       )}
 
-      {/* Error Banner */}
       {error && (
         <div className="p-3.5 rounded-xl bg-red-950/30 border border-red-900/50 text-xs text-red-400 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -476,165 +567,106 @@ export default function QuotationDetailPage() {
         </div>
       )}
 
-      {/* Concurrency Conflict Alert */}
       {conflictError && (
-        <div className="p-4 rounded-2xl bg-[#130b0b] border border-red-800/60 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-red-400">
+        <div className="p-4 rounded-2xl bg-[#130b0b] border border-red-800/60 space-y-2 text-xs">
+          <div className="flex items-center gap-2 font-bold text-red-400">
             <AlertTriangle className="w-4 h-4" />
-            <span>Concurrency Version Conflict (409 STALE_VERSION_ERROR)</span>
+            <span>Concurrency Version Conflict</span>
           </div>
-          <p className="text-xs text-[#a1a1aa] leading-relaxed">
-            {conflictError}
-          </p>
-          <div className="flex items-center gap-2 pt-1">
-            <button
-              onClick={() => {
-                setConflictError(null);
-                loadQuotation(id);
-              }}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-500 text-white flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Reload Latest Server State</span>
-            </button>
-          </div>
+          <p className="text-[#a1a1aa]">{conflictError}</p>
+          <button
+            onClick={() => {
+              setConflictError(null);
+              loadQuotation(id);
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-500 text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Reload Latest Server State</span>
+          </button>
         </div>
       )}
 
-      {/* Section 3 Spec: Sales Rep Parameters Card */}
-      <div className="bg-[#0b0c0e] border border-[#1c1c22] rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#18181f] pb-3">
-          <div>
-            <h3 className="text-sm font-semibold text-[#ededed] flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-blue-400" />
-              <span>Quotation Scope &amp; Commercial Terms</span>
-            </h3>
-            <p className="text-[11px] text-[#71717a]">
-              Customer relationship, payment terms, and commercial assumptions entered by Sales Rep
-            </p>
-          </div>
-          {canEdit && (
-            <div className="flex items-center gap-2">
-              {isDirty && (
-                <span className="text-[11px] text-amber-400 font-mono flex items-center gap-1">
-                  ● Unsaved header changes
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                disabled={saving}
-                className="px-3 py-1 text-xs font-semibold rounded-lg bg-[#161722] hover:bg-[#202230] border border-[#2b2d40] text-[#cfd2e6] hover:text-white transition-colors cursor-pointer disabled:opacity-50"
-              >
-                Save Draft Values
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          {/* Customer & Resolved Tier (Read-only for Sales Rep) */}
-          <div className="space-y-1.5 p-3 rounded-xl bg-[#111216] border border-[#1c1c24]">
-            <span className="text-[11px] font-semibold text-[#a1a1aa] block">
-              Customer Account
-            </span>
-            <div className="font-semibold text-[#ededed]">
-              {quotation.customer?.name || 'Customer'}
-            </div>
-            <div className="text-[11px] text-[#71717a]">
-              {quotation.customer?.email || 'contact@customer.com'}
-            </div>
-            <div className="pt-2 mt-2 border-t border-[#1a1b24] flex items-center justify-between">
-              <span className="text-[10px] font-mono text-[#888]">Resolved Pricing Tier:</span>
-              <span className="font-mono text-[11px] font-bold text-blue-400">
-                {customerTier} ({tierCeilingPercent}% Ceiling)
-              </span>
-            </div>
-          </div>
-
-          {/* Expiration Date (Editable by Sales Rep) */}
-          <div className="space-y-1.5 p-3 rounded-xl bg-[#111216] border border-[#1c1c24]">
-            <label className="text-[11px] font-semibold text-[#a1a1aa] flex items-center justify-between">
-              <span>Expiration Date</span>
-              <span className="text-[10px] text-[#666]">Optional</span>
-            </label>
-            {canEdit ? (
-              <div className="relative">
-                <input
-                  type="date"
-                  value={expirationDate}
-                  onChange={(e) => {
-                    setExpirationDate(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full bg-[#0a0b0e] border border-[#242632] rounded-lg px-3 py-1.5 text-xs text-[#ededed] focus:outline-none focus:border-blue-500 font-mono"
-                />
-              </div>
-            ) : (
-              <div className="font-mono text-xs text-[#ededed] py-1.5">
-                {expirationDate || 'No expiration set'}
-              </div>
-            )}
-            <div className="pt-2 mt-2 border-t border-[#1a1b24] flex items-center justify-between">
-              <span className="text-[10px] font-mono text-[#888]">Currency:</span>
-              <span className="font-mono text-[11px] font-bold text-[#ededed]">
-                {quotation.currency} ({currencySymbol})
-              </span>
-            </div>
-          </div>
-
-          {/* Internal Notes / Deal Scope (Editable by Sales Rep) */}
-          <div className="space-y-1.5 p-3 rounded-xl bg-[#111216] border border-[#1c1c24]">
-            <label className="text-[11px] font-semibold text-[#a1a1aa] flex items-center justify-between">
-              <span>Internal Deal Notes / Scope</span>
-              <span className="text-[10px] text-[#666]">Commercial Terms</span>
-            </label>
-            {canEdit ? (
-              <textarea
-                rows={2}
-                value={internalNotes}
-                onChange={(e) => {
-                  setInternalNotes(e.target.value);
-                  setIsDirty(true);
-                }}
-                placeholder="Key commercial assumptions, payment terms, or client requirements..."
-                className="w-full bg-[#0a0b0e] border border-[#242632] rounded-lg p-2 text-xs text-[#ededed] focus:outline-none focus:border-blue-500 placeholder:text-[#52525b] resize-none"
-              />
-            ) : (
-              <p className="text-xs text-[#a1a1aa] py-1 leading-relaxed">
-                {internalNotes || 'No internal commercial notes recorded.'}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Section 2 Spec: Prominent Add Product / Add to Quote Area */}
+      {/* 2. Compact Product, Service, Warranty, and Subscription Catalog Selector */}
       {canEdit && (
         <div className="bg-[#0b0c0e] border border-[#1c1c22] rounded-2xl p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-[#18181f] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#18181f] pb-3">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
                 <Plus className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[#ededed]">Add Product to Quotation</h3>
+                <h3 className="text-sm font-semibold text-[#ededed]">Add Item to Quotation</h3>
                 <p className="text-[11px] text-[#71717a]">
-                  Select catalog products, configure variants, adjust quantities, and apply compliant discounts
+                  Catalog selector for Physical Products, Services, Warranties, and Subscriptions
                 </p>
               </div>
             </div>
             <div className="text-[11px] font-mono text-[#888]">
-              Effective Line Ceiling: <strong className="text-blue-400">{activeEffectiveLimit}%</strong>
+              Customer Tier Limit: <strong className="text-blue-400">{tierCeilingPercent}%</strong>
             </div>
           </div>
 
-          <form onSubmit={handleAddLine} className="space-y-4">
+          {/* Search and Filters Bar */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="w-3.5 h-3.5 text-[#666] absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={catalogSearch}
+                onChange={(e) => setCatalogSearch(e.target.value)}
+                placeholder="Search catalog by name or SKU..."
+                className="w-full bg-[#111216] border border-[#24252f] rounded-xl pl-9 pr-3 py-1.5 text-xs text-[#ededed] placeholder:text-[#555] focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* Type Filters */}
+            <div className="inline-flex rounded-xl bg-[#111216] border border-[#24252f] p-0.5 text-xs">
+              {[
+                { id: 'ALL', label: 'All' },
+                { id: 'PHYSICAL_PRODUCT', label: 'Products' },
+                { id: 'SERVICE', label: 'Services' },
+                { id: 'WARRANTY', label: 'Warranties' },
+                { id: 'SUBSCRIPTION', label: 'Subscriptions' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setSelectedTypeFilter(t.id)}
+                  className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
+                    selectedTypeFilter === t.id
+                      ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                      : 'text-[#888] hover:text-[#ededed]'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Category Filter */}
+            <select
+              value={selectedCategoryFilter}
+              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+              className="bg-[#111216] border border-[#24252f] text-xs text-[#ededed] rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500"
+            >
+              <option value="ALL">All Categories</option>
+              {availableCategories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Add Item Form */}
+          <form onSubmit={handleAddLine} className="space-y-4 pt-1">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-              {/* Product Selector */}
+              {/* Item Selector Dropdown */}
               <div className="lg:col-span-2 space-y-1">
                 <label className="text-[11px] font-semibold text-[#a1a1aa] block">
-                  Product <span className="text-red-400">*</span>
+                  Select Item <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={selectedProductId}
@@ -642,58 +674,91 @@ export default function QuotationDetailPage() {
                   disabled={loadingCatalog || addingLine}
                   className="w-full text-xs bg-[#111216] border border-[#24252f] text-[#ededed] rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"
                 >
-                  {catalogProducts.map((p) => (
+                  {filteredCatalogProducts.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.category}) — Base: {currencySymbol}{Number(p.basePrice).toFixed(2)}
+                      {p.name} ({p.itemType}) — {currencySymbol}{Number(p.basePrice).toFixed(2)} • {p.billingType}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Product Variant */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-[#a1a1aa] block">
-                  Variant
-                </label>
-                <select
-                  value={selectedVariantId}
-                  onChange={(e) => setSelectedVariantId(e.target.value)}
-                  disabled={addingLine || !activeProduct?.variants?.length}
-                  className="w-full text-xs bg-[#111216] border border-[#24252f] text-[#ededed] rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 disabled:opacity-50"
-                >
-                  <option value="">Standard / Base</option>
-                  {activeProduct?.variants?.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.attributeName}: {v.attributeValue} (+{currencySymbol}{Number(v.extraPrice).toFixed(2)})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Type-Specific Field 1: Variant (for Physical Product) OR Duration/Cycle */}
+              {activeProduct?.itemType === 'PHYSICAL_PRODUCT' && activeProduct?.variants?.length > 0 && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-[#a1a1aa] block">
+                    Product Variant
+                  </label>
+                  <select
+                    value={selectedVariantId}
+                    onChange={(e) => setSelectedVariantId(e.target.value)}
+                    disabled={addingLine}
+                    className="w-full text-xs bg-[#111216] border border-[#24252f] text-[#ededed] rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">Standard / Base</option>
+                    {activeProduct.variants.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.attributeName}: {v.attributeValue} (+{currencySymbol}{Number(v.extraPrice).toFixed(2)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-              {/* Subscription Plan */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-[#a1a1aa] block">
-                  Subscription Plan
-                </label>
-                <select
-                  value={selectedPlanId}
-                  onChange={(e) => setSelectedPlanId(e.target.value)}
-                  disabled={addingLine}
-                  className="w-full text-xs bg-[#111216] border border-[#24252f] text-[#ededed] rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="">One-Time Sale</option>
-                  {subscriptionPlans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name} ({plan.billingCycle})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Type-Specific: Warranty Linked Product */}
+              {activeProduct?.itemType === 'WARRANTY' && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-[#a1a1aa] block">
+                    Linked Covered Product <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={warrantyLinkedProductId}
+                    onChange={(e) => setWarrantyLinkedProductId(e.target.value)}
+                    disabled={addingLine || physicalQuoteLines.length === 0}
+                    className="w-full text-xs bg-[#111216] border border-[#24252f] text-[#ededed] rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                  >
+                    {physicalQuoteLines.length === 0 ? (
+                      <option value="">No physical product on quote</option>
+                    ) : (
+                      physicalQuoteLines.map((pl) => (
+                        <option key={pl.id} value={pl.productId}>
+                          {pl.product?.name || pl.productNameSnapshot}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              )}
 
-              {/* Quantity */}
+              {/* Type-Specific: Subscription Plan selection */}
+              {activeProduct?.itemType === 'SUBSCRIPTION' && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-[#a1a1aa] block">
+                    Recurring Billing Plan
+                  </label>
+                  <select
+                    value={selectedPlanId}
+                    onChange={(e) => setSelectedPlanId(e.target.value)}
+                    disabled={addingLine}
+                    className="w-full text-xs bg-[#111216] border border-[#24252f] text-[#ededed] rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">Standard Plan Cycle</option>
+                    {subscriptionPlans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} ({plan.billingCycle})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Quantity / Units / Seats */}
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-[#a1a1aa] block">
-                  Quantity
+                  {activeProduct?.itemType === 'SERVICE'
+                    ? 'Service Hours'
+                    : activeProduct?.itemType === 'SUBSCRIPTION'
+                    ? 'Seats / Quantity'
+                    : 'Quantity'}
                 </label>
                 <div className="flex items-center rounded-xl bg-[#111216] border border-[#24252f] p-0.5">
                   <button
@@ -751,59 +816,162 @@ export default function QuotationDetailPage() {
                   <span className="absolute right-3 top-2 text-xs text-[#666]">%</span>
                 </div>
               </div>
+
+              {/* Status & Availability Preview */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-[#a1a1aa] block">
+                  Inventory / Delivery
+                </label>
+                <div className="h-[38px] px-3 rounded-xl bg-[#111216] border border-[#24252f] flex items-center text-xs">
+                  {activeProduct?.itemType === 'PHYSICAL_PRODUCT' ? (
+                    <span className="font-mono text-[11px] text-emerald-400 flex items-center gap-1.5">
+                      <Box className="w-3.5 h-3.5" />
+                      <span>{activeProduct.stockStatus || 'IN_STOCK'}</span>
+                    </span>
+                  ) : activeProduct?.itemType === 'SERVICE' ? (
+                    <span className="font-mono text-[11px] text-blue-400 flex items-center gap-1.5">
+                      <Wrench className="w-3.5 h-3.5" />
+                      <span>No warehouse stock</span>
+                    </span>
+                  ) : activeProduct?.itemType === 'WARRANTY' ? (
+                    <span className="font-mono text-[11px] text-purple-400 flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>Coverage attached</span>
+                    </span>
+                  ) : (
+                    <span className="font-mono text-[11px] text-amber-400 flex items-center gap-1.5">
+                      <Repeat className="w-3.5 h-3.5" />
+                      <span>Recurring Schedule</span>
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Line Note & Add Button Row */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
-              <div className="flex-1 w-full">
-                <input
-                  type="text"
-                  placeholder="Optional line note (special customer requirements, delivery commitments, etc.)..."
-                  value={inputLineNote}
-                  onChange={(e) => setInputLineNote(e.target.value)}
-                  disabled={addingLine}
-                  className="w-full text-xs bg-[#111216] border border-[#24252f] text-[#ededed] placeholder:text-[#52525b] rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"
-                />
+            {/* Type-Specific Extended Row */}
+            {activeProduct?.itemType === 'SERVICE' && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-[#12131b] border border-[#222432]">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-[#888] block">
+                    Service Delivery Date
+                  </label>
+                  <input
+                    type="date"
+                    value={serviceDeliveryDate}
+                    onChange={(e) => setServiceDeliveryDate(e.target.value)}
+                    className="w-full bg-[#0d0e14] border border-[#252636] rounded-lg px-2.5 py-1 text-xs text-[#ededed]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-[#888] block">
+                    Service Location
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Customer HQ / Onsite..."
+                    value={serviceLocation}
+                    onChange={(e) => setServiceLocation(e.target.value)}
+                    className="w-full bg-[#0d0e14] border border-[#252636] rounded-lg px-2.5 py-1 text-xs text-[#ededed]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-[#888] block">
+                    Service Delivery Notes
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Migration scope, backup confirmation..."
+                    value={serviceNote}
+                    onChange={(e) => setServiceNote(e.target.value)}
+                    className="w-full bg-[#0d0e14] border border-[#252636] rounded-lg px-2.5 py-1 text-xs text-[#ededed]"
+                  />
+                </div>
               </div>
+            )}
 
-              <div className="flex items-center gap-3 shrink-0">
+            {/* Warranty Configuration */}
+            {activeProduct?.itemType === 'WARRANTY' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-[#12131b] border border-[#222432]">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-[#888] block">
+                    Coverage Duration
+                  </label>
+                  <select
+                    value={warrantyCoverageDuration}
+                    onChange={(e) => setWarrantyCoverageDuration(e.target.value)}
+                    className="w-full bg-[#0d0e14] border border-[#252636] rounded-lg px-2.5 py-1 text-xs text-[#ededed]"
+                  >
+                    <option value="1 Year">1 Year Standard Replacement</option>
+                    <option value="2 Years">2 Years Comprehensive Coverage</option>
+                    <option value="3 Years">3 Years Extended Enterprise Care</option>
+                  </select>
+                </div>
+                <div className="flex items-center text-xs text-[#a0a2b8] pt-4">
+                  <span>Coverage will be officially attached to the covered hardware serial/SKU during fulfillment.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Subscription Configuration */}
+            {activeProduct?.itemType === 'SUBSCRIPTION' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-[#12131b] border border-[#222432]">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono text-[#888] block">
+                    Subscription Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={subscriptionStartDate}
+                    onChange={(e) => setSubscriptionStartDate(e.target.value)}
+                    className="w-full bg-[#0d0e14] border border-[#252636] rounded-lg px-2.5 py-1 text-xs text-[#ededed]"
+                  />
+                </div>
+                <div className="flex items-center text-xs text-[#a0a2b8] pt-4">
+                  <span>Recurring billing schedule will be initiated upon quotation confirmation.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Button Row */}
+            <div className="flex items-center justify-between pt-1">
+              <div className="text-xs text-[#71717a]">
                 {parseFloat(inputDiscount) > activeEffectiveLimit && (
-                  <span className="text-xs text-rose-400 font-mono flex items-center gap-1">
+                  <span className="text-rose-400 font-mono font-medium flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>+{((parseFloat(inputDiscount) || 0) - activeEffectiveLimit).toFixed(1)}pt over limit</span>
+                    <span>+{((parseFloat(inputDiscount) || 0) - activeEffectiveLimit).toFixed(1)}pt over category limit</span>
                   </span>
                 )}
-
-                <button
-                  type="submit"
-                  disabled={addingLine || saving || loadingCatalog || !selectedProductId}
-                  className="h-[38px] px-6 rounded-xl text-xs font-semibold bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-                >
-                  {addingLine ? (
-                    <>
-                      <Spinner size="sm" />
-                      <span>Adding to Quote...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4" />
-                      <span>Add to Quote</span>
-                    </>
-                  )}
-                </button>
               </div>
+
+              <button
+                type="submit"
+                disabled={addingLine || saving || loadingCatalog || !selectedProductId}
+                className="h-[38px] px-6 rounded-xl text-xs font-semibold bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                {addingLine ? (
+                  <>
+                    <Spinner size="sm" />
+                    <span>Adding to Quote...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>Add Item</span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Section 4 Spec: Line-Item Table */}
+      {/* 3. Exact Line-Item Table (Product | Qty | Price | Discount | Limit | Status) */}
       <div className="bg-[#0b0c0e] border border-[#1c1c22] rounded-2xl overflow-hidden shadow-sm">
         <div className="p-4 border-b border-[#1c1c22] flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-[#ededed]">Quotation Line Items</h3>
             <p className="text-[11px] text-[#71717a]">
-              Authoritative line discounts, effective limits, and live margins
+              Physical Products, Services, Warranties, and Subscriptions with server-authoritative ceilings
             </p>
           </div>
           <span className="text-xs font-mono text-[#71717a]">
@@ -813,24 +981,23 @@ export default function QuotationDetailPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-[#c8c8c2]">
-            {/* Exact Header Spec: Product | Qty | Price | Discount % | Limit | Status | Line Margin | Actions */}
+            {/* Columns: Product | Qty | Price | Discount | Limit | Status */}
             <thead className="bg-[#111216] text-[#71717a] font-mono text-[11px] uppercase tracking-wider border-b border-[#1c1c22]">
               <tr>
                 <th className="py-3 px-4">Product</th>
                 <th className="py-3 px-3 text-center w-36">Qty</th>
                 <th className="py-3 px-3 text-right">Price</th>
-                <th className="py-3 px-3 text-center w-32">Discount %</th>
+                <th className="py-3 px-3 text-center w-32">Discount</th>
                 <th className="py-3 px-3 text-center">Limit</th>
                 <th className="py-3 px-3 text-center">Status</th>
-                <th className="py-3 px-4 text-right">Line Margin</th>
-                {canEdit && <th className="py-3 px-3 text-center w-16">Actions</th>}
+                {canEdit && <th className="py-3 px-3 text-center w-20">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#18181f]">
               {!hasLines ? (
-                /* Section 2 Spec: Initial Empty Item Area */
+                /* Initial Empty Item State */
                 <tr>
-                  <td colSpan={canEdit ? 8 : 7} className="py-14 text-center">
+                  <td colSpan={canEdit ? 7 : 6} className="py-14 text-center">
                     <div className="flex flex-col items-center gap-2 max-w-sm mx-auto">
                       <div className="w-10 h-10 rounded-xl bg-[#14151e] border border-[#232533] flex items-center justify-center text-[#707284]">
                         <Package className="w-5 h-5" />
@@ -851,34 +1018,49 @@ export default function QuotationDetailPage() {
                   const isMarginWarning = Number(line.lineMargin) < 0 || (Number(line.lineSubtotal) > 0 && (Number(line.lineMargin) / Number(line.lineSubtotal)) < 0.15);
 
                   let statusText = 'OK';
-                  let statusBadgeStyle = 'bg-emerald-950/30 text-emerald-400 border-emerald-900/40';
+                  let statusBadgeStyle = 'bg-emerald-950/40 text-emerald-400 border-emerald-900/50';
 
                   if (isInvalid) {
                     statusText = 'INVALID';
                     statusBadgeStyle = 'bg-red-950/40 text-red-400 border-red-900/50';
                   } else if (isOverLimit) {
-                    statusText = `OVER LIMIT (+${overBy.toFixed(1)}pt)`;
+                    statusText = `OVER (+${overBy.toFixed(0)}pt)`;
                     statusBadgeStyle = 'bg-red-950/40 text-red-400 border-red-900/50';
                   } else if (isMarginWarning) {
                     statusText = 'MARGIN WARNING';
                     statusBadgeStyle = 'bg-amber-950/40 text-amber-400 border-amber-900/50';
                   }
 
+                  const lineType = line.itemType || (line.categorySnapshot === 'Services' ? 'SERVICE' : line.categorySnapshot === 'Warranty' ? 'WARRANTY' : line.isRecurring ? 'SUBSCRIPTION' : 'PHYSICAL_PRODUCT');
+                  const billingType = line.billingType || (line.isRecurring ? 'Recurring' : 'One-time');
+
                   return (
                     <tr key={line.id} className="hover:bg-[#111216] transition-colors">
                       {/* Product */}
-                      <td className="py-3.5 px-4 space-y-0.5">
-                        <div className="font-semibold text-[#ededed]">
-                          {line.product?.name || line.productNameSnapshot}
+                      <td className="py-3.5 px-4 space-y-1">
+                        <div className="font-semibold text-[#ededed] flex items-center gap-2">
+                          <span>{line.product?.name || line.productNameSnapshot}</span>
+                          {/* Small Muted Billing-Type Label */}
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#171822] text-[#888] border border-[#272836]">
+                            {billingType}
+                          </span>
                         </div>
                         <div className="text-[10px] text-[#71717a] flex flex-wrap items-center gap-2">
                           <span className="font-mono text-[#52525b]">{line.product?.sku}</span>
                           <span>•</span>
-                          <span>{line.categorySnapshot || line.product?.category}</span>
+                          <span className="text-[#a0a2b8]">{lineType}</span>
+                          {line.stockStatus && (
+                            <>
+                              <span>•</span>
+                              <span className={line.stockStatus === 'IN_STOCK' ? 'text-emerald-400' : 'text-amber-400'}>
+                                {line.stockStatus}
+                              </span>
+                            </>
+                          )}
                           {line.variant && (
                             <>
                               <span>•</span>
-                              <span className="text-blue-400 font-medium">
+                              <span className="text-blue-400">
                                 {line.variant.attributeName}: {line.variant.attributeValue}
                               </span>
                             </>
@@ -886,7 +1068,7 @@ export default function QuotationDetailPage() {
                           {line.subscriptionPlan && (
                             <>
                               <span>•</span>
-                              <span className="text-purple-400 font-medium">
+                              <span className="text-purple-400">
                                 {line.subscriptionPlan.name} ({line.subscriptionPlan.billingCycle})
                               </span>
                             </>
@@ -925,12 +1107,12 @@ export default function QuotationDetailPage() {
                         )}
                       </td>
 
-                      {/* Price (Read-only) */}
+                      {/* Price (Read-only from server) */}
                       <td className="py-3.5 px-3 text-right font-mono text-xs text-[#ededed]">
-                        {currencySymbol}{Number(line.unitPrice).toFixed(2)}
+                        {currencySymbol}{Number(line.unitPrice).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                       </td>
 
-                      {/* Discount % (Sales rep editable) */}
+                      {/* Discount (Editable) */}
                       <td className="py-3.5 px-3 text-center">
                         {canEdit ? (
                           <div className="inline-flex items-center gap-1">
@@ -938,7 +1120,7 @@ export default function QuotationDetailPage() {
                               type="number"
                               min="0"
                               max="100"
-                              step="0.5"
+                              step="1"
                               defaultValue={discPct}
                               onBlur={(e) => handleDiscountChange(line, e.target.value)}
                               onKeyDown={(e) => {
@@ -946,7 +1128,7 @@ export default function QuotationDetailPage() {
                                   e.target.blur();
                                 }
                               }}
-                              className={`w-16 text-center text-xs font-mono py-1 rounded-lg border focus:outline-none transition-colors ${
+                              className={`w-14 text-center text-xs font-mono py-1 rounded-lg border focus:outline-none transition-colors ${
                                 isOverLimit
                                   ? 'bg-red-950/20 border-red-800 text-red-400 focus:border-red-600'
                                   : 'bg-[#111114] border-[#25262e] text-[#ededed] focus:border-[#444]'
@@ -956,31 +1138,21 @@ export default function QuotationDetailPage() {
                           </div>
                         ) : (
                           <span className="font-mono text-xs">
-                            {discPct.toFixed(1)}%
+                            {discPct.toFixed(0)}%
                           </span>
                         )}
                       </td>
 
                       {/* Limit (Read-only) */}
                       <td className="py-3.5 px-3 text-center font-mono text-xs text-[#888]">
-                        {limitPct.toFixed(1)}%
+                        {limitPct.toFixed(0)}%
                       </td>
 
                       {/* Status */}
                       <td className="py-3.5 px-3 text-center">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded border ${statusBadgeStyle}`}>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${statusBadgeStyle}`}>
                           {!isOverLimit && !isInvalid && <Check className="w-2.5 h-2.5" />}
                           {statusText}
-                        </span>
-                      </td>
-
-                      {/* Line Margin (Server-computed) */}
-                      <td className="py-3.5 px-4 text-right font-mono">
-                        <span className="font-bold text-[#ededed] block">
-                          {currencySymbol}{Number(line.lineMargin).toFixed(2)}
-                        </span>
-                        <span className="text-[10px] text-[#71717a]">
-                          net {currencySymbol}{(Number(line.lineSubtotal) - Number(line.lineDiscountAmount)).toFixed(2)}
                         </span>
                       </td>
 
@@ -1007,12 +1179,13 @@ export default function QuotationDetailPage() {
         </div>
       </div>
 
-      {/* Screen #4 Wireframe Helper Banner (Muted Dark Gold, No Neon Glow) */}
-      <div className="p-3 rounded-lg bg-[#14120c] border border-[#3d3215] text-xs text-[#c9b276] leading-relaxed flex items-center gap-2">
-        <span>Discount is checked against each line&apos;s max limit as soon as it is entered, not only at submit time.</span>
+      {/* 5. Discount and Limit Behavior: Amber Warning Banner */}
+      <div className="p-3.5 rounded-xl bg-[#14120c] border border-[#3d3215] text-xs text-[#c9b276] leading-relaxed flex items-center gap-2.5">
+        <AlertTriangle className="w-4 h-4 text-[#eab308] shrink-0" />
+        <span>Discount is checked against each line&apos;s own limit live, as soon as it is entered, not only at submit time.</span>
       </div>
 
-      {/* Section 6 Spec: Flagged Lines Details */}
+      {/* Flagged Line Breakdown Table (if overages exist) */}
       {flaggedLines.length > 0 && (
         <div className="bg-[#141010] border border-[#3d2024] rounded-2xl p-4 space-y-2.5">
           <div className="flex items-center gap-2 text-xs font-bold text-rose-400">
@@ -1039,9 +1212,9 @@ export default function QuotationDetailPage() {
                   return (
                     <tr key={fl.id}>
                       <td className="py-2.5 px-3 text-white font-sans font-medium">{fl.product?.name || fl.productNameSnapshot}</td>
-                      <td className="py-2.5 px-3 text-right text-rose-400 font-bold">{disc.toFixed(1)}%</td>
-                      <td className="py-2.5 px-3 text-right text-[#a0a2b8]">{limit.toFixed(1)}%</td>
-                      <td className="py-2.5 px-3 text-right text-rose-400 font-bold">+{overBy.toFixed(1)} pt</td>
+                      <td className="py-2.5 px-3 text-right text-rose-400 font-bold">{disc.toFixed(0)}%</td>
+                      <td className="py-2.5 px-3 text-right text-[#a0a2b8]">{limit.toFixed(0)}%</td>
+                      <td className="py-2.5 px-3 text-right text-rose-400 font-bold">+{overBy.toFixed(0)}pt</td>
                       <td className="py-2.5 px-3 text-[#c4c6dc] font-sans text-xs">
                         Exceeds {customerTier} tier &amp; {fl.categorySnapshot || fl.product?.category} ceiling
                       </td>
@@ -1054,7 +1227,77 @@ export default function QuotationDetailPage() {
         </div>
       )}
 
-      {/* Section 2 & 5 Spec: Server-Computed Economics & Risk Panel */}
+      {/* 6. Upsell and Cross-Sell Suggestions (Matching Mockup Cards) */}
+      {upsellSuggestions.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-blue-400" />
+              <h3 className="text-sm font-semibold text-[#ededed]">
+                Upsell and Cross-Sell Suggestions
+              </h3>
+            </div>
+            <span className="text-[11px] font-mono text-[#52525b]">Live Algorithmic Recommendations</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            {upsellSuggestions.map((sug) => (
+              <div
+                key={sug.id}
+                className="p-4 rounded-2xl bg-[#0e0f14] border border-[#1e1f28] hover:border-[#2d2f3c] flex flex-col justify-between space-y-3 transition-colors shadow-sm"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-[#ededed]">
+                      + {sug.productName}
+                    </h4>
+                    {sug.promotionTag?.includes('off') ? (
+                      <span className="text-[11px] font-mono font-semibold text-amber-400">
+                        Promo: {sug.promotionTag}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-mono font-semibold text-emerald-400">
+                        Margin: +{currencySymbol}{sug.marginDelta ? Number(sug.marginDelta).toFixed(0) : '18'}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#71717a] leading-relaxed">
+                    {sug.reason}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-[#18181f]">
+                  <span className="font-mono text-xs font-bold text-white">
+                    {currencySymbol}{Number(sug.unitPrice).toFixed(0)}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => dismissUpsell(sug.id)}
+                      className="px-2 py-1 text-[11px] text-[#666] hover:text-[#999] transition-colors cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => handleAddUpsell(sug)}
+                        disabled={saving}
+                        className="px-3 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add to Quote</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 7. Economics and Risk Integration */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Financial Totals */}
         <div className="lg:col-span-2 bg-[#0b0c0e] border border-[#1c1c22] rounded-2xl p-5 space-y-4 shadow-sm">
@@ -1184,7 +1427,6 @@ export default function QuotationDetailPage() {
                 </span>
               </div>
 
-              {/* Helper Message */}
               <div className="pt-2 border-t border-[#18181f] text-[11px] text-[#71717a] leading-relaxed">
                 {!hasLines ? (
                   <span className="text-[#888]">Add line items to calculate margin and deal risk.</span>
@@ -1201,75 +1443,7 @@ export default function QuotationDetailPage() {
         </div>
       </div>
 
-      {/* Upsell & Cross-Sell Suggestions */}
-      {upsellSuggestions.length > 0 && (
-        <div className="bg-[#0b0c0e] border border-[#1c1c22] rounded-2xl p-5 space-y-3">
-          <div className="flex items-center justify-between border-b border-[#18181f] pb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-blue-400" />
-              <h3 className="text-sm font-semibold text-[#ededed]">
-                Smart Upsell &amp; Cross-Sell Recommendations
-              </h3>
-            </div>
-            <span className="text-[11px] font-mono text-[#52525b]">Ranked by Margin Delta</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
-            {upsellSuggestions.map((sug) => (
-              <div
-                key={sug.id}
-                className="p-3.5 rounded-xl bg-[#111216] border border-[#1f2027] hover:border-[#31333e] flex flex-col justify-between space-y-3 transition-colors"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950/40 text-blue-400 border border-blue-900/40">
-                      {sug.promotionTag}
-                    </span>
-                    <span className="text-[10px] font-mono text-emerald-400">
-                      +{sug.marginPercent}% margin
-                    </span>
-                  </div>
-
-                  <h4 className="text-xs font-bold text-[#ededed] line-clamp-1">
-                    {sug.productName}
-                  </h4>
-                  <p className="text-[11px] text-[#71717a] leading-relaxed">
-                    {sug.reason}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-[#18181f]">
-                  <span className="font-mono text-xs font-bold text-white">
-                    {currencySymbol}{Number(sug.unitPrice).toFixed(2)}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => dismissUpsell(sug.id)}
-                      className="px-2 py-1 text-[10px] text-[#666] hover:text-[#999] rounded transition-colors cursor-pointer"
-                    >
-                      Dismiss
-                    </button>
-                    {canEdit && (
-                      <button
-                        type="button"
-                        onClick={() => handleAddUpsell(sug)}
-                        disabled={saving}
-                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Add</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Section 7 Spec: Bottom Sticky Action Bar by Status */}
+      {/* 8. Bottom Action Buttons */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#080808]/95 backdrop-blur border-t border-[#1c1c22] z-30">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-xs text-[#71717a]">
@@ -1286,7 +1460,6 @@ export default function QuotationDetailPage() {
           <div className="flex items-center gap-3">
             {canEdit ? (
               <>
-                {/* Cancel -> return to quotation list with unsaved changes check */}
                 <button
                   type="button"
                   onClick={handleCancelClick}
@@ -1295,7 +1468,6 @@ export default function QuotationDetailPage() {
                   Cancel
                 </button>
 
-                {/* Save Draft */}
                 <button
                   type="button"
                   onClick={handleSaveDraft}
@@ -1305,7 +1477,6 @@ export default function QuotationDetailPage() {
                   Save Draft
                 </button>
 
-                {/* Submit for Approval (Disabled until at least 1 valid line exists) */}
                 <button
                   type="button"
                   onClick={() => setShowSubmitModal(true)}
@@ -1322,7 +1493,6 @@ export default function QuotationDetailPage() {
                 </button>
               </>
             ) : isPendingApproval ? (
-              /* PENDING_APPROVAL controls */
               <div className="flex items-center gap-3">
                 <span className="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/25 flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5" />
@@ -1338,7 +1508,6 @@ export default function QuotationDetailPage() {
                 </Link>
               </div>
             ) : quotation.status === 'APPROVED' ? (
-              /* APPROVED controls -> Send to Fulfillment */
               <div className="flex items-center gap-3">
                 <Link
                   href={`/fulfillment/${quotation.id}`}
@@ -1358,6 +1527,65 @@ export default function QuotationDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Controlled Change Customer Modal (Draft Only) */}
+      {showChangeCustomerModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0e0f14] border border-[#22222a] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#1c1c22] pb-3">
+              <h3 className="text-sm font-bold text-[#ededed]">Change Customer Account</h3>
+              <button
+                onClick={() => setShowChangeCustomerModal(false)}
+                className="text-[#666] hover:text-[#ededed] cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-[#a1a1aa] leading-relaxed">
+              <p>
+                Changing the customer account will re-evaluate customer tier ceilings, price list adjustments, line limits, and live margin risk scores across all existing lines.
+              </p>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-[#a1a1aa] block">
+                  Select Customer Account
+                </label>
+                <select
+                  value={newCustomerId}
+                  onChange={(e) => setNewCustomerId(e.target.value)}
+                  className="w-full text-xs bg-[#111216] border border-[#24252f] text-[#ededed] rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"
+                >
+                  {allCustomers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.tier} Tier) — {c.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowChangeCustomerModal(false)}
+                className="px-4 py-2 text-xs font-medium text-[#888] hover:text-[#ededed] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleChangeCustomer}
+                disabled={changingCustomer}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                {changingCustomer ? <Spinner size="sm" /> : <UserCheck className="w-3.5 h-3.5" />}
+                <span>Update Customer &amp; Revalidate</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Modal: Submit for Approval */}
       {showSubmitModal && (
@@ -1465,7 +1693,7 @@ export default function QuotationDetailPage() {
               <span>Discard Unsaved Changes?</span>
             </div>
             <p className="text-xs text-[#a1a1aa] leading-relaxed">
-              You have modified quotation parameters or notes without saving. Returning now will discard your pending edits.
+              You have modified quotation parameters without saving. Returning now will discard your pending edits.
             </p>
             <div className="flex items-center justify-end gap-2 pt-1">
               <button
