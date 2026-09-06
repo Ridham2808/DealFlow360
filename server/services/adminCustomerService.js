@@ -7,7 +7,7 @@ const { ApiError } = require('../utils/apiResponse');
 class AdminCustomerService {
   // ─── LIST ─────────────────────────────────────────────────────────
 
-  async listCustomers({ tier, isActive, page = 1, limit = 20 } = {}) {
+  async listCustomers({ tier, isActive, page = 1, limit = 100 } = {}) {
     const where = {
       ...(tier     ? { tier }     : {}),
       ...(typeof isActive === 'boolean' ? { isActive } : {}),

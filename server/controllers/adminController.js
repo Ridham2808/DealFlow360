@@ -7,7 +7,7 @@ class AdminController {
 
   async listUsers(req, res, next) {
     try {
-      const { role, status, page = 1, limit = 20 } = req.query;
+      const { role, status, page = 1, limit = 100 } = req.query;
       const result = await adminUserService.listUsers({
         role, status,
         page: Number(page), limit: Number(limit),
@@ -89,7 +89,7 @@ class AdminController {
 
   async listCustomers(req, res, next) {
     try {
-      const { tier, isActive, page = 1, limit = 20 } = req.query;
+      const { tier, isActive, page = 1, limit = 100 } = req.query;
       const result = await adminCustomerService.listCustomers({
         tier,
         isActive: isActive !== undefined ? isActive === 'true' : undefined,

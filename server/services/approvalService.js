@@ -408,9 +408,9 @@ class ApprovalService {
   /**
    * List quotations for approval workflow with filtering and pagination.
    */
-  async listApprovals({ status, pendingOnly, ownerId, riskLevel, search, page = 1, limit = 20 }) {
+  async listApprovals({ status, pendingOnly, ownerId, riskLevel, search, page = 1, limit = 50 }) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const limitNum = Math.min(1000, Math.max(1, parseInt(limit, 10) || 50));
     const skip = (pageNum - 1) * limitNum;
 
     const where = {};

@@ -51,7 +51,7 @@ export default function SubscriptionsListPage() {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
       params.append('page', '1');
-      params.append('limit', '20');
+      params.append('limit', '500');
 
       const res = await apiRequest(`/subscriptions?${params.toString()}`);
       setData(res);

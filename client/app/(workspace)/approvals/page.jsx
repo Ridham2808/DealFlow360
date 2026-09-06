@@ -44,7 +44,7 @@ export default function ApprovalsListPage() {
       if (riskFilter) params.append('riskLevel', riskFilter);
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
       params.append('page', pagination.page);
-      params.append('limit', '20');
+      params.append('limit', '500');
 
       const res = await apiRequest(`/approvals?${params.toString()}`);
       const list = res.items || [];
@@ -100,12 +100,26 @@ export default function ApprovalsListPage() {
       <div className="pb-2">
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Approvals (List)</h1>
         <p className="text-xs sm:text-sm text-[#888894] mt-0.5">
-          Every quotation that needed, needs, or is going through discount approval
+          Every quotation that needed, needs, or is going through discount approval ({pagination.total || items.length} total records)
         </p>
       </div>
 
-      {/* Screen #5 Top Status Pills with Counts (3 Pending, 1 Returned, 12 Approved) */}
+      {/* Screen #5 Top Status Pills with Counts */}
       <div className="flex flex-wrap items-center gap-2.5">
+        <button
+          onClick={() => {
+            setPendingOnly(false);
+            setStatusFilter('');
+          }}
+          className={`px-3 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            !pendingOnly && !statusFilter
+              ? 'bg-[#3b82f6] text-white font-bold shadow-xs'
+              : 'bg-[#101524] text-[#60a5fa] border border-[#1e2e4f] hover:bg-[#151f38]'
+          }`}
+        >
+          <span>All Approvals ({pagination.total || items.length})</span>
+        </button>
+
         <button
           onClick={() => {
             setPendingOnly(true);

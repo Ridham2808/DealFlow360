@@ -258,7 +258,7 @@ class QuotationService {
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 20));
+    const limitNum = Math.max(1, Math.min(1000, parseInt(limit, 10) || 50));
     const skip = (pageNum - 1) * limitNum;
 
     const [total, items] = await Promise.all([

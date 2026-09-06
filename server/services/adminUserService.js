@@ -14,7 +14,7 @@ class AdminUserService {
   /**
    * Paginated list of internal (non-CUSTOMER) users.
    */
-  async listUsers({ role, status, page = 1, limit = 20 } = {}) {
+  async listUsers({ role, status, page = 1, limit = 100 } = {}) {
     const where = {
       role: { not: 'CUSTOMER' },
       ...(role   ? { role }   : {}),

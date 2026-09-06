@@ -399,9 +399,9 @@ class BillingService {
   /**
    * List subscriptions with Active, Paused, Cancelled status counts.
    */
-  async listSubscriptions({ status, customerId, page = 1, limit = 20 }) {
+  async listSubscriptions({ status, customerId, page = 1, limit = 50 }) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const limitNum = Math.min(1000, Math.max(1, parseInt(limit, 10) || 50));
     const skip = (pageNum - 1) * limitNum;
 
     const where = {};
@@ -558,9 +558,9 @@ class BillingService {
   /**
    * List invoices with Unpaid and Paid status pills.
    */
-  async listInvoices({ status, customerId, page = 1, limit = 20 }) {
+  async listInvoices({ status, customerId, page = 1, limit = 50 }) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const limitNum = Math.min(1000, Math.max(1, parseInt(limit, 10) || 50));
     const skip = (pageNum - 1) * limitNum;
 
     const where = {};

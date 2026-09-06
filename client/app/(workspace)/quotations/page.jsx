@@ -73,7 +73,7 @@ export default function QuotationsPage() {
       if (search) queryParams.set('search', search);
       if (statusFilter) queryParams.set('status', statusFilter);
       if (riskFilter) queryParams.set('riskLevel', riskFilter);
-      queryParams.set('limit', '100');
+      queryParams.set('limit', '500');
 
       const res = await api.get(`/quotations?${queryParams.toString()}`);
       if (res && res.data) {
