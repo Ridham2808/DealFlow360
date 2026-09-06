@@ -83,21 +83,27 @@ async function main() {
   console.log('[Seed] ✓ Purge complete.\n');
 
   // ══════════════════════════════════════════════════════════════════════════
-  // STEP 1 — CUSTOMERS (8)
+  // STEP 1 — CUSTOMERS (14)
   // ══════════════════════════════════════════════════════════════════════════
   console.log('[Seed] Creating customers…');
   const customerData = [
     // GOLD (15% ceiling)
-    { name: 'Acme Corp',          email: 'contact@acmecorp.com',      tier: 'GOLD'   },
-    { name: 'NovaTech Solutions',  email: 'contact@novatech.io',       tier: 'GOLD'   },
+    { name: 'Acme Corp',                 email: 'contact@acmecorp.com',      tier: 'GOLD'   },
+    { name: 'NovaTech Solutions',         email: 'contact@novatech.io',       tier: 'GOLD'   },
+    { name: 'Apex Global Technologies',  email: 'contact@apexglobal.com',    tier: 'GOLD'   },
+    { name: 'Vanguard Systems Corp',     email: 'contact@vanguardsys.com',   tier: 'GOLD'   },
     // SILVER (10% ceiling)
-    { name: 'Beta Industries',    email: 'contact@betaindustries.com', tier: 'SILVER' },
-    { name: 'Quantum Dynamics',   email: 'contact@quantumdyn.com',    tier: 'SILVER' },
-    { name: 'Meridian Partners',  email: 'contact@meridianp.com',     tier: 'SILVER' },
+    { name: 'Beta Industries',           email: 'contact@betaindustries.com', tier: 'SILVER' },
+    { name: 'Quantum Dynamics',          email: 'contact@quantumdyn.com',    tier: 'SILVER' },
+    { name: 'Meridian Partners',         email: 'contact@meridianp.com',     tier: 'SILVER' },
+    { name: 'Helios Energy Group',        email: 'contact@heliosenergy.com',  tier: 'SILVER' },
+    { name: 'Terraform Analytics',       email: 'contact@terraformlabs.com', tier: 'SILVER' },
     // BRONZE (5% ceiling)
-    { name: 'Summit Retail Co',   email: 'contact@summitretail.com',  tier: 'BRONZE' },
-    { name: 'Crest Logistics',    email: 'contact@crestlog.com',      tier: 'BRONZE' },
-    { name: 'Pinnacle Services',  email: 'contact@pinnaclesvc.com',   tier: 'BRONZE' },
+    { name: 'Summit Retail Co',          email: 'contact@summitretail.com',  tier: 'BRONZE' },
+    { name: 'Crest Logistics',           email: 'contact@crestlog.com',      tier: 'BRONZE' },
+    { name: 'Pinnacle Services',         email: 'contact@pinnaclesvc.com',   tier: 'BRONZE' },
+    { name: 'Starlight Media Network',   email: 'contact@starlightmedia.com', tier: 'BRONZE' },
+    { name: 'Omega Freight Logistics',   email: 'contact@omegalog.com',      tier: 'BRONZE' },
   ];
 
   const customers = {};
@@ -111,7 +117,7 @@ async function main() {
   console.log(`[Seed] ✓ ${customerData.length} customers created.\n`);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // STEP 2 — USERS (10 internal + 2 portal customers)
+  // STEP 2 — USERS (10 internal + 14 portal customers)
   // ══════════════════════════════════════════════════════════════════════════
   console.log('[Seed] Creating users…');
   const userData = [
@@ -141,6 +147,90 @@ async function main() {
       role: 'CUSTOMER',
       customerTier: 'GOLD',
       customerId: customers['NovaTech Solutions'].id,
+    },
+    {
+      name: 'Arthur Dent',
+      email: 'customer@apexglobal.com',
+      role: 'CUSTOMER',
+      customerTier: 'GOLD',
+      customerId: customers['Apex Global Technologies'].id,
+    },
+    {
+      name: 'Bruce Wayne',
+      email: 'customer@vanguardsys.com',
+      role: 'CUSTOMER',
+      customerTier: 'GOLD',
+      customerId: customers['Vanguard Systems Corp'].id,
+    },
+    {
+      name: 'David King',
+      email: 'customer@betaindustries.com',
+      role: 'CUSTOMER',
+      customerTier: 'SILVER',
+      customerId: customers['Beta Industries'].id,
+    },
+    {
+      name: 'Emily Watson',
+      email: 'customer@quantumdyn.com',
+      role: 'CUSTOMER',
+      customerTier: 'SILVER',
+      customerId: customers['Quantum Dynamics'].id,
+    },
+    {
+      name: 'Robert Thorne',
+      email: 'customer@meridianp.com',
+      role: 'CUSTOMER',
+      customerTier: 'SILVER',
+      customerId: customers['Meridian Partners'].id,
+    },
+    {
+      name: 'Tony Stark',
+      email: 'customer@heliosenergy.com',
+      role: 'CUSTOMER',
+      customerTier: 'SILVER',
+      customerId: customers['Helios Energy Group'].id,
+    },
+    {
+      name: 'Peter Parker',
+      email: 'customer@terraformlabs.com',
+      role: 'CUSTOMER',
+      customerTier: 'SILVER',
+      customerId: customers['Terraform Analytics'].id,
+    },
+    {
+      name: 'Jessica Miller',
+      email: 'customer@summitretail.com',
+      role: 'CUSTOMER',
+      customerTier: 'BRONZE',
+      customerId: customers['Summit Retail Co'].id,
+    },
+    {
+      name: 'Michael Scott',
+      email: 'customer@crestlog.com',
+      role: 'CUSTOMER',
+      customerTier: 'BRONZE',
+      customerId: customers['Crest Logistics'].id,
+    },
+    {
+      name: 'Laura Croft',
+      email: 'customer@pinnaclesvc.com',
+      role: 'CUSTOMER',
+      customerTier: 'BRONZE',
+      customerId: customers['Pinnacle Services'].id,
+    },
+    {
+      name: 'Natasha Romanoff',
+      email: 'customer@starlightmedia.com',
+      role: 'CUSTOMER',
+      customerTier: 'BRONZE',
+      customerId: customers['Starlight Media Network'].id,
+    },
+    {
+      name: 'Clark Kent',
+      email: 'customer@omegalog.com',
+      role: 'CUSTOMER',
+      customerTier: 'BRONZE',
+      customerId: customers['Omega Freight Logistics'].id,
     },
   ];
 
@@ -963,7 +1053,207 @@ async function main() {
     lines: [ svcLine(pTraining, 4, 0) ],
   });
 
-  console.log(`[Seed] ✓ 40 quotations created across all ${new Set(['DRAFT','PENDING_APPROVAL','APPROVED','RETURNED','REJECTED','SENT_TO_CUSTOMER','UNDER_NEGOTIATION','CONFIRMED','CONVERTED_TO_ORDER','EXPIRED']).size} statuses.\n`);
+  // ═══ STEP 10B — EXPANDED REALISTIC QUOTATIONS (24 MORE: Q-1041 to Q-1064) ═══
+  // DRAFT (4)
+  const qExtraDraft1 = await makeQuote({
+    customer: customers['Apex Global Technologies'], rep: rep1, status: 'DRAFT', daysOld: 2,
+    riskScore: 0, riskLevel: 'NONE',
+    lines: [ hwLine(pLaptop16, 8, 0), hwLine(pDock, 8, 0), wrnLine(pWarranty, 8) ],
+  });
+  const qExtraDraft2 = await makeQuote({
+    customer: customers['Vanguard Systems Corp'], rep: rep2, status: 'DRAFT', daysOld: 3,
+    riskScore: 5, riskLevel: 'LOW',
+    lines: [ hwLine(pLaptop14, 12, 5), svcLine(pSetup, 1, 0) ],
+  });
+  const qExtraDraft3 = await makeQuote({
+    customer: customers['Helios Energy Group'], rep: rep3, status: 'DRAFT', daysOld: 1,
+    riskScore: 8, riskLevel: 'LOW',
+    lines: [ hwLine(pMonitor, 10, 8), hwLine(pHeadset, 10, 5) ],
+  });
+  const qExtraDraft4 = await makeQuote({
+    customer: customers['Terraform Analytics'], rep: rep1, status: 'DRAFT', daysOld: 4,
+    riskScore: 0, riskLevel: 'NONE',
+    lines: [ subLine(pSaaS, 30, 0, 'plan-crm-yearly'), svcLine(pConsulting, 2, 0) ],
+  });
+
+  // PENDING_APPROVAL (4)
+  const qExtraPend1 = await makeQuote({
+    customer: customers['Apex Global Technologies'], rep: rep1, status: 'PENDING_APPROVAL', daysOld: 3,
+    riskScore: 18, riskLevel: 'LOW',
+    lines: [ hwLine(pLaptop16, 15, 18, 15), hwLine(pDock, 15, 10, 15) ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', status: 'PENDING' }],
+  });
+  const qExtraPend2 = await makeQuote({
+    customer: customers['Vanguard Systems Corp'], rep: rep2, status: 'PENDING_APPROVAL', daysOld: 2,
+    riskScore: 35, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pLaptop14, 20, 22, 15), svcLine(pSetup, 3, 15, 10) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', status: 'PENDING' },
+      { order: 2, role: 'FINANCE', status: 'PENDING' },
+    ],
+  });
+  const qExtraPend3 = await makeQuote({
+    customer: customers['Helios Energy Group'], rep: rep3, status: 'PENDING_APPROVAL', daysOld: 1,
+    riskScore: 55, riskLevel: 'HIGH',
+    lines: [ hwLine(pMonitor, 25, 25, 10), svcLine(pConsulting, 5, 20, 10) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', status: 'PENDING' },
+      { order: 2, role: 'FINANCE', status: 'PENDING' },
+    ],
+  });
+  const qExtraPend4 = await makeQuote({
+    customer: customers['Starlight Media Network'], rep: rep1, status: 'PENDING_APPROVAL', daysOld: 2,
+    riskScore: 22, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pHeadset, 30, 15, 5), subLine(pCarePlan, 30, 10, 'plan-care-monthly') ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', status: 'PENDING' }],
+  });
+
+  // IN_REVIEW (3)
+  const qExtraRev1 = await makeQuote({
+    customer: customers['Apex Global Technologies'], rep: rep2, status: 'IN_REVIEW', daysOld: 4,
+    riskScore: 40, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pLaptop16, 10, 20, 15), svcLine(pConsulting, 4, 15, 10) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'APPROVED', notes: 'Strategic Q3 expansion' },
+      { order: 2, role: 'FINANCE', status: 'PENDING' },
+    ],
+  });
+  const qExtraRev2 = await makeQuote({
+    customer: customers['Terraform Analytics'], rep: rep3, status: 'IN_REVIEW', daysOld: 3,
+    riskScore: 65, riskLevel: 'HIGH',
+    lines: [ subLine(pSaaS, 50, 25, 'plan-crm-yearly'), svcLine(pTraining, 6, 20, 10) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr2.id, status: 'APPROVED', notes: 'Multi-year commitment lock-in' },
+      { order: 2, role: 'FINANCE', status: 'PENDING' },
+    ],
+  });
+  const qExtraRev3 = await makeQuote({
+    customer: customers['Omega Freight Logistics'], rep: rep1, status: 'IN_REVIEW', daysOld: 5,
+    riskScore: 32, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pLaptop14, 15, 18, 5), hwLine(pDock, 15, 12, 5) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'APPROVED', notes: 'Fleet rollout volume' },
+      { order: 2, role: 'FINANCE', status: 'PENDING' },
+    ],
+  });
+
+  // APPROVED (3)
+  const qExtraAppr1 = await makeQuote({
+    customer: customers['Apex Global Technologies'], rep: rep1, status: 'APPROVED', daysOld: 5,
+    riskScore: 12, riskLevel: 'LOW',
+    lines: [ hwLine(pLaptop14, 8, 12, 15), hwLine(pDock, 8, 8, 15), wrnLine(pWarranty, 8) ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'APPROVED', notes: 'Within executive tolerance' }],
+  });
+  const qExtraAppr2 = await makeQuote({
+    customer: customers['Helios Energy Group'], rep: rep2, status: 'APPROVED', daysOld: 6,
+    riskScore: 28, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pMonitor, 20, 14, 10), hwLine(pHeadset, 20, 10, 10) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr2.id, status: 'APPROVED' },
+      { order: 2, role: 'FINANCE', userId: fin1.id, status: 'APPROVED', notes: 'Energy sector reference account' },
+    ],
+  });
+  const qExtraAppr3 = await makeQuote({
+    customer: customers['Vanguard Systems Corp'], rep: rep3, status: 'APPROVED', daysOld: 4,
+    riskScore: 8, riskLevel: 'LOW',
+    lines: [ subLine(pSaaS, 25, 5, 'plan-crm-yearly'), svcLine(pSetup, 2, 5, 10) ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'APPROVED' }],
+  });
+
+  // SENT_TO_CUSTOMER / UNDER_NEGOTIATION (4)
+  const qExtraSent1 = await makeQuote({
+    customer: customers['Apex Global Technologies'], rep: rep1, status: 'SENT_TO_CUSTOMER', daysOld: 6,
+    riskScore: 10, riskLevel: 'LOW',
+    lines: [ hwLine(pLaptop16, 12, 10, 15), hwLine(pDock, 12, 10, 15) ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'APPROVED' }],
+  });
+  const qExtraSent2 = await makeQuote({
+    customer: customers['Vanguard Systems Corp'], rep: rep2, status: 'UNDER_NEGOTIATION', daysOld: 7,
+    riskScore: 24, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pLaptop14, 15, 12, 15), wrnLine(pWarranty, 15) ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', userId: mgr2.id, status: 'APPROVED' }],
+  });
+  const qExtraSent3 = await makeQuote({
+    customer: customers['Terraform Analytics'], rep: rep3, status: 'SENT_TO_CUSTOMER', daysOld: 8,
+    riskScore: 5, riskLevel: 'LOW',
+    lines: [ subLine(pCarePlan, 20, 0, 'plan-care-monthly'), svcLine(pTraining, 3, 0, 10) ],
+  });
+  const qExtraSent4 = await makeQuote({
+    customer: customers['Omega Freight Logistics'], rep: rep1, status: 'UNDER_NEGOTIATION', daysOld: 9,
+    riskScore: 18, riskLevel: 'LOW',
+    lines: [ hwLine(pHeadset, 25, 10, 5), svcLine(pSetup, 2, 8, 5) ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'APPROVED' }],
+  });
+
+  // CONFIRMED (4)
+  const qExtraConf1 = await makeQuote({
+    customer: customers['Apex Global Technologies'], rep: rep1, status: 'CONFIRMED', daysOld: 10,
+    riskScore: 8, riskLevel: 'LOW',
+    lines: [ hwLine(pLaptop16, 10, 8, 15), hwLine(pDock, 10, 5, 15), wrnLine(pWarranty, 10) ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'APPROVED' }],
+    invoiceStatus: 'PAID',
+  });
+  const qExtraConf2 = await makeQuote({
+    customer: customers['Vanguard Systems Corp'], rep: rep2, status: 'CONFIRMED', daysOld: 12,
+    riskScore: 30, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pLaptop14, 14, 12, 15), subLine(pSaaS, 30, 5, 'plan-crm-yearly') ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr2.id, status: 'APPROVED' },
+      { order: 2, role: 'FINANCE', userId: fin2.id, status: 'APPROVED' },
+    ],
+    invoiceStatus: 'ISSUED',
+  });
+  const qExtraConf3 = await makeQuote({
+    customer: customers['Helios Energy Group'], rep: rep3, status: 'CONFIRMED', daysOld: 15,
+    riskScore: 15, riskLevel: 'LOW',
+    lines: [ hwLine(pMonitor, 18, 10, 10), hwLine(pHeadset, 18, 5, 10) ],
+    approvals: [{ order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'APPROVED' }],
+    invoiceStatus: 'PARTIALLY_PAID',
+  });
+  const qExtraConf4 = await makeQuote({
+    customer: customers['Terraform Analytics'], rep: rep1, status: 'CONFIRMED', daysOld: 14,
+    riskScore: 0, riskLevel: 'NONE',
+    lines: [ subLine(pCarePlan, 15, 0, 'plan-care-quarterly'), svcLine(pConsulting, 3, 0) ],
+    invoiceStatus: 'PAID',
+  });
+
+  // REJECTED (2)
+  const qExtraRej1 = await makeQuote({
+    customer: customers['Starlight Media Network'], rep: rep2, status: 'REJECTED', daysOld: 11,
+    riskScore: 85, riskLevel: 'HIGH',
+    lines: [ hwLine(pLaptop16, 20, 35, 5), hwLine(pMonitor, 20, 30, 5) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'REJECTED', notes: 'Margin negative; requested 35% discount exceeds 5% bronze ceiling' },
+    ],
+  });
+  const qExtraRej2 = await makeQuote({
+    customer: customers['Omega Freight Logistics'], rep: rep3, status: 'REJECTED', daysOld: 13,
+    riskScore: 75, riskLevel: 'HIGH',
+    lines: [ hwLine(pLaptop14, 30, 28, 5), subLine(pSaaS, 30, 20, 'plan-crm-yearly') ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr2.id, status: 'REJECTED', notes: 'Unacceptable discount spread across multiple product lines' },
+    ],
+  });
+
+  // RETURNED (2)
+  const qExtraRet1 = await makeQuote({
+    customer: customers['Helios Energy Group'], rep: rep1, status: 'RETURNED', daysOld: 8,
+    riskScore: 28, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pLaptop14, 10, 15, 10), svcLine(pSetup, 2, 15, 10) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr1.id, status: 'RETURNED', notes: 'Reduce hardware discount to 10% to preserve target margin' },
+    ],
+  });
+  const qExtraRet2 = await makeQuote({
+    customer: customers['Terraform Analytics'], rep: rep2, status: 'RETURNED', daysOld: 9,
+    riskScore: 32, riskLevel: 'MEDIUM',
+    lines: [ hwLine(pMonitor, 15, 18, 10), wrnLine(pWarranty, 15) ],
+    approvals: [
+      { order: 1, role: 'SALES_MANAGER', userId: mgr2.id, status: 'RETURNED', notes: 'Please bundle with Care Plan to offset monitor discount' },
+    ],
+  });
+
+  console.log(`[Seed] ✓ 64 quotations created across all ${new Set(['DRAFT','PENDING_APPROVAL','APPROVED','RETURNED','REJECTED','SENT_TO_CUSTOMER','UNDER_NEGOTIATION','CONFIRMED','CONVERTED_TO_ORDER','EXPIRED']).size} statuses.\n`);
 
   // ══════════════════════════════════════════════════════════════════════════
   // STEP 11 — FULFILLMENT SPLITS (for confirmed/converted quotes)
@@ -993,6 +1283,17 @@ async function main() {
     { q: qConv2, wh: whMain, p: pLaptop16, fulfilled: 12, backorder: 0, cost: 21600 },
     { q: qConv2, wh: whEast, p: pLaptop16, fulfilled: 5,  backorder: 0, cost: 9000  },
     { q: qConv2, wh: whWest, p: pLaptop16, fulfilled: 3,  backorder: 0, cost: 5400  },
+    // qExtraConf1 — Apex Global Technologies
+    { q: qExtraConf1, wh: whMain, p: pLaptop16, fulfilled: 7, backorder: 0, cost: 12600 },
+    { q: qExtraConf1, wh: whEast, p: pLaptop16, fulfilled: 3, backorder: 0, cost: 5400  },
+    { q: qExtraConf1, wh: whMain, p: pDock,     fulfilled: 10, backorder: 0, cost: 1300 },
+    // qExtraConf2 — Vanguard Systems Corp
+    { q: qExtraConf2, wh: whMain, p: pLaptop14, fulfilled: 10, backorder: 0, cost: 14000 },
+    { q: qExtraConf2, wh: whWest, p: pLaptop14, fulfilled: 4,  backorder: 0, cost: 5600  },
+    // qExtraConf3 — Helios Energy Group
+    { q: qExtraConf3, wh: whEast, p: pMonitor,  fulfilled: 12, backorder: 0, cost: 5040 },
+    { q: qExtraConf3, wh: whMain, p: pMonitor,  fulfilled: 6,  backorder: 0, cost: 2520 },
+    { q: qExtraConf3, wh: whMain, p: pHeadset,  fulfilled: 18, backorder: 0, cost: 2880 },
   ];
 
   for (const f of fulfillmentData) {
@@ -1026,6 +1327,13 @@ async function main() {
     { planId: 'plan-care-monthly', amount: 49 * 6,  nextBill: daysAgo(25),  status: 'INVOICED' },
     { planId: 'plan-care-monthly', amount: 49 * 12, nextBill: daysAgo(20),  status: 'INVOICED' },
     { planId: 'plan-crm-yearly',   amount: 960 * 25, nextBill: daysAgo(350), status: 'INVOICED' },
+    // qExtraConf2 — Vanguard Systems 30 × CRM SaaS
+    { planId: 'plan-crm-yearly', amount: 960 * 30, nextBill: daysFromNow(25), status: 'SCHEDULED' },
+    { planId: 'plan-crm-yearly', amount: 960 * 30, nextBill: daysFromNow(390), status: 'SCHEDULED' },
+    // qExtraConf4 — Terraform Analytics Care Plan Quarterly
+    { planId: 'plan-care-quarterly', amount: 139 * 15, nextBill: daysFromNow(12), status: 'SCHEDULED' },
+    { planId: 'plan-care-quarterly', amount: 139 * 15, nextBill: daysFromNow(102), status: 'SCHEDULED' },
+    { planId: 'plan-care-monthly', amount: 49 * 20, nextBill: daysFromNow(18), status: 'SCHEDULED' },
   ];
 
   for (const bs of billingSchedules) {
@@ -1050,6 +1358,13 @@ async function main() {
     { q: qConf4, num: 'INV-PART-001',   type: 'STANDARD',    amount: 4500, status: 'PARTIALLY_PAID', dueOff: 15 },
     { q: qConf5, num: 'INV-OVR-001',    type: 'STANDARD',    amount: 6800, status: 'OVERDUE', dueOff: -10 },
     { q: qConv2, num: 'INV-VOID-001',   type: 'CREDIT_NOTE', amount: 1200, status: 'VOID',    dueOff: 0  },
+    // New invoices for expanded quotes
+    { q: qExtraAppr1, num: 'INV-APEX-001',   type: 'STANDARD', amount: 18500, status: 'ISSUED', dueOff: 30 },
+    { q: qExtraConf1, num: 'INV-APEX-002',   type: 'STANDARD', amount: 24350, status: 'PAID', dueOff: 15 },
+    { q: qExtraConf2, num: 'INV-VANG-001',   type: 'STANDARD', amount: 38200, status: 'ISSUED', dueOff: 30 },
+    { q: qExtraConf3, num: 'INV-HELIOS-001', type: 'STANDARD', amount: 15800, status: 'PARTIALLY_PAID', dueOff: 20 },
+    { q: qExtraConf4, num: 'INV-TERRA-001',  type: 'RECURRING', amount: 3200, status: 'PAID', dueOff: 10 },
+    { q: qExtraSent2, num: 'INV-PRE-001',    type: 'PROFORMA', amount: 22100, status: 'DRAFT', dueOff: 45 },
   ];
 
   for (const inv of additionalInvoices) {
@@ -1106,6 +1421,17 @@ async function main() {
     // Risk events
     { actor: rep2, action: 'SUBMITTED_FOR_APPROVAL', qId: qPend3.id, note: 'Risk score 62 — FINANCE escalation required' },
     { actor: mgr1, action: 'APPROVAL_STEP_APPROVED', qId: qPend3.id, note: 'Step 1 approved — hardware lines OK, Service flagged' },
+    // Extra expanded audit events
+    { actor: rep1, action: 'SUBMITTED_FOR_APPROVAL', qId: qExtraPend1.id, note: 'Submitted Apex Global volume deal — 18% laptop discount' },
+    { actor: rep2, action: 'SUBMITTED_FOR_APPROVAL', qId: qExtraPend2.id, note: 'Vanguard Systems bundle submitted with Finance review trigger' },
+    { actor: mgr1, action: 'APPROVAL_STEP_APPROVED', qId: qExtraRev1.id,  note: 'Manager approved Step 1 for Apex expansion quote' },
+    { actor: mgr2, action: 'APPROVAL_STEP_APPROVED', qId: qExtraRev2.id,  note: 'Manager approved multi-year SaaS structure for Terraform' },
+    { actor: mgr1, action: 'APPROVAL_STEP_APPROVED', qId: qExtraAppr1.id, note: 'Final approval granted for Apex Global Technologies' },
+    { actor: fin1, action: 'APPROVAL_STEP_APPROVED', qId: qExtraAppr2.id, note: 'Finance sign-off on Helios Energy special terms' },
+    { actor: mgr1, action: 'APPROVAL_STEP_REJECTED', qId: qExtraRej1.id,  note: 'Rejected 35% discount request due to negative margin' },
+    { actor: mgr1, action: 'APPROVAL_STEP_RETURNED', qId: qExtraRet1.id,  note: 'Returned for adjustment — please cap hardware discount at 10%' },
+    { actor: users['customer@apexglobal.com'], action: 'CUSTOMER_CONFIRMED_QUOTATION', qId: qExtraConf1.id, note: 'Apex Global accepted final proposal' },
+    { actor: users['customer@vanguardsys.com'], action: 'COUNTER_DISCOUNT_PROPOSAL',    qId: qExtraSent2.id, note: 'Customer counter-proposed 14% on laptops' },
   ];
 
   for (const ev of auditEvents) {
@@ -1149,6 +1475,13 @@ async function main() {
     { q: qConf4,  type: 'OVERDUE_INVOICE',    sev: 'MEDIUM', detail: 'Invoice partially paid — $4,500 remaining balance after 15 days', resolved: false },
     // Resolved example
     { q: qConf1,  type: 'STALLED',            sev: 'LOW',    detail: 'Previously stalled — resolved after customer confirmed', resolved: true  },
+    // New health flags for expanded quotes
+    { q: qExtraPend2, type: 'MARGIN_BELOW_TARGET',      sev: 'MEDIUM', detail: 'Blended quote margin is 22.5%, below 25% guideline', resolved: false },
+    { q: qExtraPend3, type: 'HIGH_DISCOUNT_CONCESSION', sev: 'HIGH',   detail: 'Helios quote has 25% discount on Hardware monitor line', resolved: false },
+    { q: qExtraRev2,  type: 'MULTI_DISCOUNT_SPREAD',   sev: 'MEDIUM', detail: 'Concurrent 25% SaaS and 20% Service discounts compound risk', resolved: false },
+    { q: qExtraRej1,  type: 'NEGATIVE_MARGIN',          sev: 'CRITICAL', detail: 'Net margin is -8.4% on 35% requested hardware concession', resolved: true },
+    { q: qExtraRet1,  type: 'DISCOUNT_CEILING_BREACH',  sev: 'HIGH',   detail: 'Requested 15% hardware discount exceeds Silver 10% ceiling', resolved: false },
+    { q: qExtraSent2, type: 'STALLED',                  sev: 'LOW',    detail: 'Awaiting customer response on counter-discount proposal', resolved: false },
   ];
 
   for (const hf of healthFlags) {
@@ -1164,7 +1497,7 @@ async function main() {
   console.log(`[Seed] ✓ ${healthFlags.length} deal health flags created.\n`);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // STEP 16 — INBOUND CUSTOMER REQUESTS (RFQs) (5)
+  // STEP 16 — INBOUND CUSTOMER REQUESTS (RFQs) (15)
   // ══════════════════════════════════════════════════════════════════════════
   console.log('[Seed] Seeding inbound customer quote requests (RFQs)…');
   const custRequests = [
@@ -1234,6 +1567,139 @@ async function main() {
         { name: 'Rugged 10-inch Warehouse Tablet', quantity: 20, category: 'Hardware', notes: 'Barcode scanner integrated' },
       ],
     },
+    // New RFQ Requests
+    {
+      requestNumber: 'REQ-1006',
+      customerId: customers['Apex Global Technologies'].id,
+      title: 'Engineering Cluster Refresh — 20 Laptop Pro 16 & Docks',
+      status: 'PENDING',
+      targetBudget: 62000.00,
+      neededByDate: daysFromNow(20),
+      notes: 'Fast-track approval needed for offshore engineering squad. Gold account discount requested.',
+      items: [
+        { name: 'Laptop Pro 16 (64GB / 2TB)', quantity: 20, category: 'Hardware', notes: 'Top spec model' },
+        { name: 'Thunderbolt 4 Docking Station', quantity: 20, category: 'Hardware', notes: 'Included power supplies' },
+        { name: 'Hardware Extended Warranty (3-Year)', quantity: 20, category: 'Warranty', notes: 'Next business day SLA' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1007',
+      customerId: customers['Vanguard Systems Corp'].id,
+      title: 'Cybersecurity Operations Center Hardware & Endpoint Suite',
+      status: 'PENDING',
+      targetBudget: 38000.00,
+      neededByDate: daysFromNow(15),
+      notes: 'Procurement for new SOC team. Requires onsite configuration services.',
+      items: [
+        { name: '4K Business Monitor 27"', quantity: 16, category: 'Hardware', notes: 'Dual-head setup' },
+        { name: 'Wireless Noise-Cancel Headset', quantity: 16, category: 'Hardware', notes: 'Call center certified' },
+        { name: 'Endpoint Security Suite', quantity: 1, category: 'Services', notes: 'Corporate deployment' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1008',
+      customerId: customers['Helios Energy Group'].id,
+      title: 'Grid Control Room Workstation & Display Refresh',
+      status: 'PENDING',
+      targetBudget: 24000.00,
+      neededByDate: daysFromNow(28),
+      notes: 'Control room displays must support continuous 24/7 runtime.',
+      items: [
+        { name: '4K Business Monitor 27"', quantity: 12, category: 'Hardware', notes: 'High brightness panels' },
+        { name: 'Laptop Pro 14 (32GB / 1TB)', quantity: 6, category: 'Hardware', notes: 'Field engineering spec' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1009',
+      customerId: customers['Terraform Analytics'].id,
+      title: 'Annual Enterprise SaaS & Cloud Analytics Support',
+      status: 'REVIEWED',
+      targetBudget: 42000.00,
+      neededByDate: daysFromNow(10),
+      notes: 'Annual upfront payment. Rep discussed 10% volume incentive.',
+      items: [
+        { name: 'DealFlow CRM SaaS License (Annual)', quantity: 35, category: 'Subscriptions', notes: 'All-inclusive tier' },
+        { name: 'IT Strategy Consulting', quantity: 3, category: 'Services', notes: 'Data pipeline optimization' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1010',
+      customerId: customers['Starlight Media Network'].id,
+      title: 'Creative Studio Laptop Fleet & Pro Audio Accessories',
+      status: 'PENDING',
+      targetBudget: 20000.00,
+      neededByDate: daysFromNow(35),
+      notes: 'Standard creative department onboarding for new video editors.',
+      items: [
+        { name: 'Laptop Pro 16 (32GB / 1TB)', quantity: 6, category: 'Hardware', notes: 'Calibrated color screens' },
+        { name: 'Wireless Noise-Cancel Headset', quantity: 8, category: 'Hardware', notes: 'Studio monitoring' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1011',
+      customerId: customers['Omega Freight Logistics'].id,
+      title: 'Dispatcher Station Terminals & Hands-free Headsets',
+      status: 'QUOTED',
+      targetBudget: 16000.00,
+      neededByDate: daysFromNow(18),
+      notes: 'Formal quotation sent by sales rep Priya Nair.',
+      items: [
+        { name: 'Laptop Pro 14 (16GB / 512GB)', quantity: 8, category: 'Hardware', notes: 'Standard office build' },
+        { name: 'Wireless Noise-Cancel Headset', quantity: 12, category: 'Hardware', notes: 'Dispatcher headsets' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1012',
+      customerId: customers['Quantum Dynamics'].id,
+      title: 'Lab Simulation Hardware & Dedicated Support Extension',
+      status: 'REVIEWED',
+      targetBudget: 31000.00,
+      neededByDate: daysFromNow(12),
+      notes: 'Awaiting revised price list validation from sales rep Elena.',
+      items: [
+        { name: 'Laptop Pro 16 (64GB / 2TB)', quantity: 8, category: 'Hardware', notes: 'Math model simulation rigs' },
+        { name: 'Care Plan (Monthly)', quantity: 8, category: 'Subscriptions', notes: 'Fast response support' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1013',
+      customerId: customers['Meridian Partners'].id,
+      title: 'Branch Office Network Setup & IT Onboarding Services',
+      status: 'PENDING',
+      targetBudget: 22000.00,
+      neededByDate: daysFromNow(25),
+      notes: 'New regional branch opening in Denver. Need turnkey deployment.',
+      items: [
+        { name: 'Onsite Setup Service', quantity: 2, category: 'Services', notes: 'Denver office' },
+        { name: 'Thunderbolt 4 Docking Station', quantity: 14, category: 'Hardware', notes: 'Hot-desk setup' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1014',
+      customerId: customers['Pinnacle Services'].id,
+      title: 'Field Service Tech Tablet Upgrade & Extended Warranty',
+      status: 'QUOTED',
+      targetBudget: 15000.00,
+      neededByDate: daysFromNow(40),
+      notes: 'Quote Q-1025 currently under review with client procurement.',
+      items: [
+        { name: 'Laptop Pro 14 (16GB / 512GB)', quantity: 6, category: 'Hardware', notes: 'Ruggedized bags' },
+        { name: 'Hardware Extended Warranty', quantity: 6, category: 'Warranty', notes: 'Accidental damage cover' },
+      ],
+    },
+    {
+      requestNumber: 'REQ-1015',
+      customerId: customers['Summit Retail Co'].id,
+      title: 'Store Manager Laptops & Cloud Care Subscriptions',
+      status: 'PENDING',
+      targetBudget: 19500.00,
+      neededByDate: daysFromNow(16),
+      notes: 'Upgrade for 5 store locations in Southwest region.',
+      items: [
+        { name: 'Laptop Pro 14 (16GB / 512GB)', quantity: 5, category: 'Hardware', notes: 'Retail managers' },
+        { name: 'Care Plan (Monthly)', quantity: 5, category: 'Subscriptions', notes: 'Continuous warranty' },
+      ],
+    },
   ];
 
   for (const cr of custRequests) {
@@ -1286,6 +1752,12 @@ async function main() {
   console.log('  finance2@dealflow360.com    → Finance');
   console.log('  customer@acmecorp.com       → Customer Portal (Acme Corp / GOLD)');
   console.log('  customer@novatech.io        → Customer Portal (NovaTech / GOLD)');
+  console.log('  customer@apexglobal.com     → Customer Portal (Apex Global / GOLD)');
+  console.log('  customer@vanguardsys.com    → Customer Portal (Vanguard Systems / GOLD)');
+  console.log('  customer@betaindustries.com → Customer Portal (Beta Industries / SILVER)');
+  console.log('  customer@heliosenergy.com   → Customer Portal (Helios Energy / SILVER)');
+  console.log('  customer@summitretail.com   → Customer Portal (Summit Retail / BRONZE)');
+  console.log('  customer@starlightmedia.com → Customer Portal (Starlight Media / BRONZE)');
   console.log('');
 }
 
