@@ -14,7 +14,6 @@ import {
   Warehouse,
   ArrowRight,
   Users,
-  Settings,
   Menu,
   X,
   User
@@ -266,18 +265,6 @@ export default function TopNav() {
 
         {/* Right Section: Database Status, Role, User Profile, Logout */}
         <div className="flex items-center gap-2 xl:gap-2.5 shrink-0">
-          {/* Go to Back-end Button (Admin only) */}
-          {user?.role === 'ADMIN' && (
-            <Link
-              href="/admin/users"
-              title="Go to Back-end Configuration"
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#14151b] hover:bg-[#1a1b24] border border-[#22232a] hover:border-[#32333f] text-[#c4c4cc] hover:text-white text-xs font-medium transition-all"
-            >
-              <Settings className="w-3.5 h-3.5 text-[#888]" />
-              <span className="hidden sm:inline">Go to Back-end</span>
-            </Link>
-          )}
-
           {/* PostgreSQL Indicator */}
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0f1412] text-[#34d399] border border-[#16382a] text-[10px] font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
