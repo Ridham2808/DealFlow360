@@ -1708,6 +1708,418 @@ async function main() {
   console.log('[Seed] ✓ Inbound customer requests seeded.\n');
 
   // ══════════════════════════════════════════════════════════════════════════
+  // STEP 14 — HIGH-VOLUME EXPANSION
+  // (+55 QUOTATIONS, +220 APPROVAL STEPS, +55 FULFILLMENT SPLITS, +105 BILLING SCHEDULES, +105 INVOICES)
+  // ══════════════════════════════════════════════════════════════════════════
+  console.log('[Seed] Expanding high-volume seed data (+55 Quotes, +220 Approvals, +55 Fulfillment, +105 Subscriptions, +105 Invoices)…');
+
+  const customerList = Object.values(customers);
+  const repList = [rep1, rep2, rep3];
+  const mgrList = [mgr1, mgr2];
+  const finList = [fin1, fin2];
+  const warehouseList = [whMain, whEast, whWest];
+
+  const statuses = [
+    'CONFIRMED', 'CONVERTED_TO_ORDER', 'APPROVED', 'SENT_TO_CUSTOMER',
+    'CUSTOMER_ACCEPTED', 'PENDING_APPROVAL', 'IN_REVIEW', 'UNDER_NEGOTIATION',
+    'DRAFT', 'RETURNED', 'REJECTED',
+  ];
+
+  const bulkQuotes = [];
+  const bulkHwLines = [];
+  const bulkSubLines = [];
+
+  for (let i = 1; i <= 55; i++) {
+    const cust = customerList[(i - 1) % customerList.length];
+    const rep = repList[(i - 1) % repList.length];
+    const status = statuses[(i - 1) % statuses.length];
+    const qNum = `Q-2${String(i).padStart(3, '0')}`;
+    const daysOld = 2 + (i % 60);
+
+    // Build 2-4 lines for this quote
+    const linesData = [];
+
+    // Line 1: Main Hardware (Laptop 14 or Laptop 16)
+    const isL16 = i % 2 === 0;
+    const hwProd = isL16 ? pLaptop16 : pLaptop14;
+    const hwQty = 2 + (i % 12);
+    const hwDisc = (cust.tier === 'GOLD' ? 8 : (cust.tier === 'SILVER' ? 5 : 3)) + (i % 4);
+    const { lineSubtotal: hwSub, lineDiscountAmount: hwDiscAmount, lineMargin: hwMargin } = calcLine(
+      hwQty, Number(hwProd.basePrice), Number(hwProd.baseCost), hwDisc, 8.25
+    );
+    linesData.push({
+      product: hwProd,
+      productId: hwProd.id,
+      quantity: hwQty,
+      unitPrice: Number(hwProd.basePrice),
+      unitCost: Number(hwProd.baseCost),
+      discountPercent: hwDisc,
+      lineDiscountLimit: 15,
+      taxPercent: 8.25,
+      lineSubtotal: hwSub,
+      lineDiscountAmount: hwDiscAmount,
+      lineMargin: hwMargin,
+      isRecurring: false,
+      subscriptionPlanId: null,
+      categorySnapshot: 'Hardware',
+      productNameSnapshot: hwProd.name,
+    });
+
+    // Line 2: Accessory Hardware or Services
+    if (i % 3 === 0) {
+      const srvProd = pSetup;
+      const srvQty = 1 + (i % 4);
+      const { lineSubtotal: sSub, lineDiscountAmount: sDisc, lineMargin: sMargin } = calcLine(
+        srvQty, Number(srvProd.basePrice), Number(srvProd.baseCost), 0, 0
+      );
+      linesData.push({
+        product: srvProd,
+        productId: srvProd.id,
+        quantity: srvQty,
+        unitPrice: Number(srvProd.basePrice),
+        unitCost: Number(srvProd.baseCost),
+        discountPercent: 0,
+        lineDiscountLimit: 10,
+        taxPercent: 0,
+        lineSubtotal: sSub,
+        lineDiscountAmount: sDisc,
+        lineMargin: sMargin,
+        isRecurring: false,
+        subscriptionPlanId: null,
+        categorySnapshot: 'Services',
+        productNameSnapshot: srvProd.name,
+      });
+    } else {
+      const accProd = (i % 3 === 1) ? pDock : pMonitor;
+      const accQty = hwQty;
+      const accDisc = (i % 5 === 0) ? 6 : 0;
+      const { lineSubtotal: aSub, lineDiscountAmount: aDisc, lineMargin: aMargin } = calcLine(
+        accQty, Number(accProd.basePrice), Number(accProd.baseCost), accDisc, 8.25
+      );
+      linesData.push({
+        product: accProd,
+        productId: accProd.id,
+        quantity: accQty,
+        unitPrice: Number(accProd.basePrice),
+        unitCost: Number(accProd.baseCost),
+        discountPercent: accDisc,
+        lineDiscountLimit: 15,
+        taxPercent: 8.25,
+        lineSubtotal: aSub,
+        lineDiscountAmount: aDisc,
+        lineMargin: aMargin,
+        isRecurring: false,
+        subscriptionPlanId: null,
+        categorySnapshot: 'Hardware',
+        productNameSnapshot: accProd.name,
+      });
+    }
+
+    // Line 3: Subscription Line (Care Plan or CRM SaaS)
+    const isSaaS = i % 2 === 1;
+    const subProd = isSaaS ? pSaaS : pCarePlan;
+    const subPlanId = isSaaS ? 'plan-crm-yearly' : ((i % 4 === 0) ? 'plan-care-quarterly' : 'plan-care-monthly');
+    const subQty = hwQty;
+    const { lineSubtotal: subSub, lineDiscountAmount: subDisc, lineMargin: subMargin } = calcLine(
+      subQty, Number(subProd.basePrice), Number(subProd.baseCost), 0, 0
+    );
+    linesData.push({
+      product: subProd,
+      productId: subProd.id,
+      quantity: subQty,
+      unitPrice: Number(subProd.basePrice),
+      unitCost: Number(subProd.baseCost),
+      discountPercent: 0,
+      lineDiscountLimit: 8,
+      taxPercent: 0,
+      lineSubtotal: subSub,
+      lineDiscountAmount: subDisc,
+      lineMargin: subMargin,
+      isRecurring: true,
+      subscriptionPlanId: subPlanId,
+      categorySnapshot: 'Subscriptions',
+      productNameSnapshot: subProd.name,
+    });
+
+    // Line 4: Warranty Line (Optional)
+    if (i % 2 === 0) {
+      const wrnQty = hwQty;
+      const { lineSubtotal: wSub, lineDiscountAmount: wDisc, lineMargin: wMargin } = calcLine(
+        wrnQty, Number(pWarranty.basePrice), Number(pWarranty.baseCost), 0, 0
+      );
+      linesData.push({
+        product: pWarranty,
+        productId: pWarranty.id,
+        quantity: wrnQty,
+        unitPrice: Number(pWarranty.basePrice),
+        unitCost: Number(pWarranty.baseCost),
+        discountPercent: 0,
+        lineDiscountLimit: 5,
+        taxPercent: 0,
+        lineSubtotal: wSub,
+        lineDiscountAmount: wDisc,
+        lineMargin: wMargin,
+        isRecurring: false,
+        subscriptionPlanId: null,
+        categorySnapshot: 'Warranty',
+        productNameSnapshot: pWarranty.name,
+      });
+    }
+
+    const subtotal = linesData.reduce((s, l) => s + l.lineSubtotal, 0);
+    const discTotal = linesData.reduce((s, l) => s + l.lineDiscountAmount, 0);
+    const taxTotal = linesData.reduce((s, l) => s + (l.lineSubtotal * (l.taxPercent || 0) / 100), 0);
+    const grandTotal = subtotal + taxTotal;
+    const totalCost = linesData.reduce((s, l) => s + (l.unitCost * l.quantity), 0);
+    const marginAmount = grandTotal - totalCost - taxTotal;
+    const marginPct = grandTotal > 0 ? (marginAmount / grandTotal * 100) : 0;
+
+    let riskScore = 0;
+    let riskLevel = 'NONE';
+    if (status === 'REJECTED' || status === 'RETURNED') {
+      riskScore = 45 + (i % 25);
+      riskLevel = riskScore > 50 ? 'HIGH' : 'MEDIUM';
+    } else if (status === 'UNDER_NEGOTIATION' || status === 'IN_REVIEW') {
+      riskScore = 20 + (i % 20);
+      riskLevel = 'MEDIUM';
+    } else if (hwDisc > 6) {
+      riskScore = 10 + (i % 10);
+      riskLevel = 'LOW';
+    }
+
+    const createdAt = daysAgo(daysOld);
+
+    const createdQuote = await prisma.quotation.create({
+      data: {
+        quoteNumber: qNum,
+        customerId: cust.id,
+        ownerRepId: rep.id,
+        currency: 'USD',
+        status,
+        subtotal: Number(subtotal.toFixed(2)),
+        discountTotal: Number(discTotal.toFixed(2)),
+        taxTotal: Number(taxTotal.toFixed(2)),
+        grandTotal: Number(grandTotal.toFixed(2)),
+        totalCost: Number(totalCost.toFixed(2)),
+        marginAmount: Number(marginAmount.toFixed(2)),
+        marginPercentage: Number(marginPct.toFixed(2)),
+        blendedRiskScore: riskScore,
+        riskLevel,
+        version: 1,
+        expirationDate: daysFromNow(30),
+        createdAt,
+        updatedAt: createdAt,
+        lines: {
+          create: linesData.map(l => ({
+            productId: l.productId,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            unitCost: l.unitCost,
+            discountPercent: l.discountPercent,
+            lineDiscountLimit: l.lineDiscountLimit,
+            taxPercent: l.taxPercent,
+            lineSubtotal: Number(l.lineSubtotal.toFixed(2)),
+            lineDiscountAmount: Number(l.lineDiscountAmount.toFixed(2)),
+            lineMargin: Number(l.lineMargin.toFixed(2)),
+            isRecurring: l.isRecurring,
+            subscriptionPlanId: l.subscriptionPlanId,
+            categorySnapshot: l.categorySnapshot,
+            productNameSnapshot: l.productNameSnapshot,
+          })),
+        },
+      },
+      include: {
+        lines: true,
+      },
+    });
+
+    bulkQuotes.push(createdQuote);
+
+    for (const l of createdQuote.lines) {
+      if (l.isRecurring) {
+        bulkSubLines.push({ quote: createdQuote, line: l });
+      } else if (l.categorySnapshot === 'Hardware') {
+        bulkHwLines.push({ quote: createdQuote, line: l });
+      }
+    }
+
+    // 4 Approval steps for this quote (55 × 4 = 220 Approval Steps!)
+    const stepConfigs = [
+      { order: 1, role: 'SALES_MANAGER', user: mgrList[i % 2] },
+      { order: 2, role: 'FINANCE',       user: finList[i % 2] },
+      { order: 3, role: 'ADMIN',         user: adminUser },
+      { order: 4, role: 'FINANCE',       user: finList[(i + 1) % 2] },
+    ];
+
+    for (const sc of stepConfigs) {
+      let stepStatus = 'PENDING';
+      let actionedAt = null;
+      let notes = null;
+
+      if (['APPROVED', 'CONFIRMED', 'CONVERTED_TO_ORDER', 'SENT_TO_CUSTOMER', 'CUSTOMER_ACCEPTED'].includes(status)) {
+        stepStatus = 'APPROVED';
+        actionedAt = daysAgo(Math.max(1, daysOld - sc.order));
+        notes = `Approved step ${sc.order} under executive threshold matrix.`;
+      } else if (status === 'REJECTED') {
+        if (sc.order === 1) {
+          stepStatus = 'APPROVED';
+          actionedAt = daysAgo(daysOld - 1);
+        } else if (sc.order === 2) {
+          stepStatus = 'REJECTED';
+          actionedAt = daysAgo(daysOld - 2);
+          notes = 'Discount ceiling violation: Margin falls below minimum risk threshold.';
+        } else {
+          stepStatus = 'PENDING';
+        }
+      } else if (status === 'RETURNED') {
+        if (sc.order === 1) {
+          stepStatus = 'RETURNED';
+          actionedAt = daysAgo(daysOld - 1);
+          notes = 'Revision required: Please adjust line discount and bundle care plan.';
+        } else {
+          stepStatus = 'PENDING';
+        }
+      } else if (status === 'IN_REVIEW') {
+        if (sc.order === 1) {
+          stepStatus = 'APPROVED';
+          actionedAt = daysAgo(daysOld - 1);
+          notes = 'Managerial review complete. Passed to finance.';
+        } else {
+          stepStatus = 'PENDING';
+        }
+      } else if (status === 'UNDER_NEGOTIATION') {
+        if (sc.order <= 2) {
+          stepStatus = 'APPROVED';
+          actionedAt = daysAgo(daysOld - sc.order);
+        } else {
+          stepStatus = 'PENDING';
+        }
+      }
+
+      await prisma.approvalStep.create({
+        data: {
+          quotationId: createdQuote.id,
+          stepOrder: sc.order,
+          requiredRole: sc.role,
+          assignedUserId: sc.user ? sc.user.id : null,
+          status: stepStatus,
+          actionedAt,
+          notes,
+          createdAt,
+        },
+      });
+    }
+  }
+  console.log(`[Seed] ✓ 55 additional quotations created (Q-2001 .. Q-2055) with 220 approval steps.\n`);
+
+  // Seed 55 Fulfillment Splits
+  console.log('[Seed] Seeding 55 fulfillment split records…');
+  for (let fIdx = 1; fIdx <= 55; fIdx++) {
+    const hwLineInfo = bulkHwLines[(fIdx - 1) % bulkHwLines.length];
+    const wh = warehouseList[(fIdx - 1) % warehouseList.length];
+    const isBackorder = (fIdx % 8 === 0);
+    const fulfilledQty = isBackorder ? Math.max(1, Math.floor(hwLineInfo.line.quantity / 2)) : hwLineInfo.line.quantity;
+    const backorderQty = isBackorder ? (hwLineInfo.line.quantity - fulfilledQty) : 0;
+    const estCost = Number((fulfilledQty * Number(hwLineInfo.line.unitCost) * Number(wh.shippingCostWeight)).toFixed(2));
+    const splitStatus = isBackorder ? 'BACKORDERED' : (fIdx % 3 === 0 ? 'DELIVERED' : (fIdx % 2 === 0 ? 'SHIPPED' : 'ALLOCATED'));
+
+    await prisma.fulfillmentSplit.create({
+      data: {
+        quotationId: hwLineInfo.quote.id,
+        warehouseId: wh.id,
+        productId: hwLineInfo.line.productId,
+        quantityFulfilled: fulfilledQty,
+        backorderQuantity: backorderQty,
+        estimatedCost: estCost,
+        status: splitStatus,
+      },
+    });
+  }
+  console.log('[Seed] ✓ 55 fulfillment splits seeded.\n');
+
+  // Seed 105 Billing Schedules
+  console.log('[Seed] Seeding 105 billing schedule records…');
+  const planIds = ['plan-care-monthly', 'plan-care-quarterly', 'plan-care-yearly', 'plan-crm-yearly'];
+  const planPrices = {
+    'plan-care-monthly': 49.00,
+    'plan-care-quarterly': 139.00,
+    'plan-care-yearly': 499.00,
+    'plan-crm-yearly': 960.00,
+  };
+  const schedStatuses = ['SCHEDULED', 'INVOICED', 'PAID', 'FAILED', 'CANCELLED'];
+
+  for (let bIdx = 1; bIdx <= 105; bIdx++) {
+    const subLineInfo = bulkSubLines[(bIdx - 1) % bulkSubLines.length];
+    const planId = subLineInfo.line.subscriptionPlanId || planIds[(bIdx - 1) % planIds.length];
+    const unitPrice = planPrices[planId] || 49.00;
+    const amount = Number((unitPrice * subLineInfo.line.quantity).toFixed(2));
+
+    const isFuture = (bIdx % 3 !== 0);
+    const nextBillDate = isFuture
+      ? daysFromNow(5 + ((bIdx * 7) % 360))
+      : daysAgo(5 + ((bIdx * 11) % 180));
+
+    const status = isFuture
+      ? 'SCHEDULED'
+      : schedStatuses[bIdx % schedStatuses.length];
+
+    await prisma.billingSchedule.create({
+      data: {
+        subscriptionPlanId: planId,
+        quotationLineId: subLineInfo.line.id,
+        nextBillDate,
+        amount,
+        status,
+      },
+    });
+  }
+  console.log('[Seed] ✓ 105 billing schedule records seeded.\n');
+
+  // Seed 105 Invoices
+  console.log('[Seed] Seeding 105 invoice records…');
+  const invTypes = ['STANDARD', 'STANDARD', 'STANDARD', 'RECURRING', 'PROFORMA', 'CREDIT_NOTE'];
+  const invStatuses = ['PAID', 'ISSUED', 'PARTIALLY_PAID', 'OVERDUE', 'DRAFT', 'VOID'];
+
+  for (let invIdx = 1; invIdx <= 105; invIdx++) {
+    const quote = bulkQuotes[(invIdx - 1) % bulkQuotes.length];
+    const invNum = `INV-BULK-${String(2000 + invIdx)}`;
+    const type = invTypes[(invIdx - 1) % invTypes.length];
+    const invStatus = invStatuses[(invIdx - 1) % invStatuses.length];
+
+    const amount = Number((Number(quote.grandTotal) * (0.3 + ((invIdx % 8) * 0.1))).toFixed(2));
+
+    let dueDate;
+    let paidAt = null;
+
+    if (invStatus === 'PAID') {
+      dueDate = daysAgo(10 + (invIdx % 20));
+      paidAt = daysAgo(12 + (invIdx % 20));
+    } else if (invStatus === 'OVERDUE') {
+      dueDate = daysAgo(5 + (invIdx % 30));
+    } else if (invStatus === 'PARTIALLY_PAID') {
+      dueDate = daysFromNow(10 + (invIdx % 15));
+      paidAt = daysAgo(3);
+    } else if (invStatus === 'ISSUED') {
+      dueDate = daysFromNow(15 + (invIdx % 30));
+    } else {
+      dueDate = daysFromNow(30);
+    }
+
+    await prisma.invoice.create({
+      data: {
+        quotationId: quote.id,
+        invoiceNumber: invNum,
+        type,
+        amount: Math.max(100.00, amount),
+        status: invStatus,
+        dueDate,
+        paidAt,
+      },
+    });
+  }
+  console.log('[Seed] ✓ 105 invoices seeded.\n');
+
+  // ══════════════════════════════════════════════════════════════════════════
   // SUMMARY
   // ══════════════════════════════════════════════════════════════════════════
   const counts = {
